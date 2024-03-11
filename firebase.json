@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "sites": "syprod",
+    "site": "syprod",
     "public": "syprod",
     "ignore": [
       "firebase.json",
