@@ -281,18 +281,26 @@
 
                 socket.onmessage = (event) => {
                     const data = event.data; // Это будет строка, если сервер отправляет текстовые данные
-                    console.log(data)
-                    const match = data.match(/^@([^ ]+) :([^!]+)!([^@]+)@([^ ]+) PRIVMSG #[^ ]+ :(.*)$/);
-                    console.log(match)
+                    const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+                    
+                    // Если регулярное выражение не совпало, попытаемся улучшить его
                     if (match) {
-                        console.log('y')
                         const [, user, message] = match;
                         const time = new Date().toLocaleTimeString();
-                        console.log(user, message)
-
+                
                         if (isMessageValid(user, message)) {
-                            console.log('yes')
                             updateChatTable(user, message, time);
+                        }
+                    } else {
+                        // Если стандартное регулярное выражение не сработало, попробуем другое
+                        const extendedMatch = data.match(/:(\w+)!.* PRIVMSG #\w+ :(.+)/);
+                        if (extendedMatch) {
+                            const [, user, message] = extendedMatch;
+                            const time = new Date().toLocaleTimeString();
+                
+                            if (isMessageValid(user, message)) {
+                                updateChatTable(user, message, time);
+                            }
                         }
                     }
                 };
