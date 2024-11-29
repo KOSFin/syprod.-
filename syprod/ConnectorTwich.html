@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch Chat Mirror</title>
+    <title>Twitch Raffle Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
         body {
@@ -21,13 +21,20 @@
         #app {
             text-align: center;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
         }
 
-        input, button {
+        input, button, select {
             padding: 10px;
             font-size: 16px;
             margin: 10px;
+        }
+
+        #settings {
+            margin-bottom: 20px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
         }
 
         #chat {
@@ -39,110 +46,180 @@
             overflow-y: auto;
         }
 
-        .message {
-            margin: 5px 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #333;
+            text-align: left;
+        }
+
+        th {
+            background: #1db954;
         }
 
         .username {
             color: #1db954;
             font-weight: bold;
         }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .timer {
+            font-size: 20px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Twitch Chat Mirror</h1>
-        <button id="auth">Login with Twitch</button>
-        <div id="chat"></div>
+        <h1>Twitch Raffle Tool</h1>
+        <div id="settings">
+            <h2>Settings</h2>
+            <label for="activity">Count activity:</label>
+            <select id="activity">
+                <option value="all_messages">All Messages</option>
+                <option value="specific_messages">Messages with "участвую"</option>
+                <option value="subscriptions">Subscriptions</option>
+            </select>
+            <button id="start">Start</button>
+            <button id="stop" disabled>Stop</button>
+        </div>
+
+        <div id="info">
+            <div class="timer">Timer: <span id="timer">0:00</span></div>
+            <div>Entries: <span id="entriesCount">0</span></div>
+        </div>
+
+        <div id="chat">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Message</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="chatTable"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const authButton = document.getElementById('auth');
-        const chatContainer = document.getElementById('chat');
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const activitySelect = document.getElementById('activity');
+        const timerElement = document.getElementById('timer');
+        const entriesCountElement = document.getElementById('entriesCount');
+        const chatTable = document.getElementById('chatTable');
+
         let username = '';
         let accessToken = '';
+        let timer = 0;
+        let timerInterval;
+        let entriesCount = 0;
+        let counting = false;
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
-        authButton.addEventListener('click', () => {
+        authButton?.addEventListener('click', () => {
             const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
             window.location.href = authUrl;
         });
 
-        // Extract access token from URL hash
         const hash = window.location.hash;
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
-
-            if (accessToken) {
-                chatContainer.innerHTML = '<p>Connected! Fetching chat...</p>';
-                fetchChat();
-            }
+            if (accessToken) connectToChat();
         }
 
-        async function fetchChat() {
+        startButton.addEventListener('click', () => {
+            if (!counting) {
+                counting = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                timer = 0;
+                entriesCount = 0;
+                chatTable.innerHTML = '';
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+                connectToChat();
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            counting = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            clearInterval(timerInterval);
+            alert(`Counting stopped. Total entries: ${entriesCount}`);
+        });
+
+        function updateTimer() {
+            timer++;
+            const minutes = Math.floor(timer / 60);
+            const seconds = timer % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        async function connectToChat() {
             try {
                 const headers = {
                     'Authorization': `Bearer ${accessToken}`,
                     'Client-Id': clientId
                 };
 
-                // Fetch user information
                 const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
                 const user = response.data.data[0];
                 username = user.login;
 
-                chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
+                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
-                // Use Twitch WebSocket for chat connection
-                connectToChat(user.id);
+                socket.onopen = () => {
+                    socket.send(`PASS oauth:${accessToken}`);
+                    socket.send(`NICK ${username}`);
+                    socket.send(`JOIN #${username}`);
+                };
+
+                socket.onmessage = (event) => {
+                    if (counting) handleMessage(event.data);
+                };
+
+                socket.onerror = (error) => console.error('WebSocket error:', error);
+                socket.onclose = () => console.log('WebSocket closed');
 
             } catch (error) {
-                console.error('Error fetching chat:', error);
-                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
+                console.error('Error connecting to chat:', error);
             }
         }
 
-        // WebSocket to listen for Twitch chat messages (using Twitch IRC)
-        function connectToChat(userId) {
-            const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+        function handleMessage(message) {
+            if (message.includes('PRIVMSG')) {
+                const parts = message.split(' :');
+                const msgText = parts[1];
+                const user = message.split('!')[0].substring(1);
+                const time = new Date().toLocaleTimeString();
 
-            socket.onopen = () => {
-                socket.send(`PASS oauth:${accessToken}`);
-                socket.send(`NICK ${username}`);
-                socket.send(`JOIN #${username}`); // Join the chat room
+                const activity = activitySelect.value;
+                if (activity === 'all_messages' ||
+                    (activity === 'specific_messages' && msgText.includes('участвую')) ||
+                    activity === 'subscriptions') {
+                    entriesCount++;
+                    entriesCountElement.textContent = entriesCount;
 
-                chatContainer.innerHTML += `<p>Joined chat room for ${username}</p>`;
-            };
-
-            socket.onmessage = (event) => {
-                const message = event.data;
-                if (message.includes('PRIVMSG')) {
-                    const messageParts = message.split(' :');
-                    const msgText = messageParts[1];
-                    const username = messageParts[0].split('!')[0].substring(1); // Extract username
-                    displayMessage(username, msgText);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${user}</td><td>${msgText}</td><td>${time}</td>`;
+                    chatTable.appendChild(row);
                 }
-            };
-
-            socket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-
-            socket.onclose = () => {
-                console.log('WebSocket closed');
-            };
-        }
-
-        // Display chat message
-        function displayMessage(username, message) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.innerHTML = `<span class="username">${username}:</span> ${message}`;
-            chatContainer.appendChild(messageElement);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to the bottom
+            }
         }
     </script>
 </body>
