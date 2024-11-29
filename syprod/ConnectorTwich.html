@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial="1.0">
+    <meta name="viewport" content="width=device-width, initial="initial-scale=1.0">
     <title>2Wchat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
@@ -97,45 +97,55 @@
             font-weight: bold;
         }
 
-        .search {
-            margin-top: 20px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #connect-btn {
-            background-color: #9146FF;
+        #connect-section {
+            text-align: center;
+            padding: 20px;
+            background: #6f33b8;
+            border-radius: 10px;
+            width: 60%;
+            margin: 30px auto;
             color: white;
+        }
+
+        #connect-section button {
+            background-color: #6f33b8;
             border: none;
-            padding: 15px 25px;
-            border-radius: 5px;
+            color: white;
             font-size: 18px;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
+            margin-top: 15px;
         }
 
-        #connect-btn img {
-            width: 20px;
-            margin-right: 10px;
+        #connect-section button:hover {
+            background-color: #5a2d9e;
         }
 
+        .search-bar {
+            margin-bottom: 20px;
+            padding: 10px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <h1>Twitch Raffle Tool</h1>
 
+        <!-- Section for connecting to Twitch if no token is found -->
+        <div id="connect-section" style="display: none;">
+            <h2>Connect your Twitch Account</h2>
+            <p>Click the button below to integrate your Twitch account and start interacting with the chat!</p>
+            <a href="https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=pxie3yypaf51ctb0gmvz7m76fq4z0c&redirect_uri=https://syprod.ru/ConnectorTwich.html&scope=chat:read">
+                <button>Connect to Twitch</button>
+            </a>
+        </div>
+
+        <!-- User info section, shown after successful login -->
         <div id="user-info" style="display: none;">
             <img id="user-avatar" src="" alt="User Avatar">
             <span id="user-name"></span>
-        </div>
-
-        <div id="connect-section" style="display: none;">
-            <button id="connect-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Twitch_logo_2019.svg/2560px-Twitch_logo_2019.svg.png" alt="Twitch Logo">
-                Connect with Twitch
-            </button>
         </div>
 
         <div id="settings">
@@ -155,14 +165,12 @@
             <button id="stop" disabled>Stop</button>
         </div>
 
-        <div class="search">
-            <input type="text" id="searchInput" placeholder="Search by username, message or time" onkeyup="searchTable()">
-        </div>
-
         <div id="info">
             <div class="timer">Timer: <span id="timer">0:00</span></div>
             <div>Entries: <span id="entriesCount">0</span></div>
         </div>
+
+        <input class="search-bar" type="text" id="searchInput" placeholder="Search by username, message, or time...">
 
         <div id="chat">
             <table>
@@ -190,9 +198,8 @@
         const userInfoDiv = document.getElementById('user-info');
         const userNameSpan = document.getElementById('user-name');
         const userAvatarImg = document.getElementById('user-avatar');
-        const connectSection = document.getElementById('connect-section');
-        const connectButton = document.getElementById('connect-btn');
         const searchInput = document.getElementById('searchInput');
+        const connectSection = document.getElementById('connect-section');
 
         let username = '';
         let accessToken = '';
@@ -213,15 +220,12 @@
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
-            if (accessToken) connectToChat();
-            else connectSection.style.display = 'block'; // Show connection button if no token
+            if (accessToken) {
+                connectToChat();
+            }
         } else {
-            connectSection.style.display = 'block'; // Show connection button if no token
+            connectSection.style.display = 'block';
         }
-
-        connectButton.addEventListener('click', () => {
-            window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=chat:read`;
-        });
 
         startButton.addEventListener('click', () => {
             if (!counting) {
@@ -263,54 +267,62 @@
                 const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
                 const user = response.data.data[0];
                 username = user.login;
-                userNameSpan.textContent = username;
                 userAvatarImg.src = user.profile_image_url;
+                userNameSpan.textContent = username;
                 userInfoDiv.style.display = 'flex';
-                connectSection.style.display = 'none';
-                fetchMessages();
+
+                fetchChatMessages();
             } catch (error) {
-                console.error(error);
-                alert('Failed to connect with Twitch. Please try again.');
+                console.error('Error fetching user data:', error);
             }
         }
 
-        function fetchMessages() {
-            // Example: Replace with actual API fetching and filtering logic
-            setInterval(() => {
-                const row = document.createElement('tr');
-                const message = `Message ${entriesCount + 1} from ${username}`;
-                const date = new Date().toLocaleString();
+        async function fetchChatMessages() {
+            const queryParams = {
+                broadcaster_id: 'your_broadcaster_id', // Replace with the broadcaster ID
+                first: 50 // Number of messages to fetch
+            };
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Client-Id': clientId
+            };
 
-                row.innerHTML = `
-                    <td class="username">${username}</td>
-                    <td>${message}</td>
-                    <td>${date}</td>
-                `;
-                chatTable.appendChild(row);
-                entriesCount++;
-                entriesCountElement.textContent = entriesCount;
-            }, 1000); // Simulate new messages every 1 second
+            try {
+                const response = await axios.get('https://api.twitch.tv/helix/streams', { headers, params: queryParams });
+                const messages = response.data.data;
+
+                messages.forEach(message => {
+                    const messageEntry = document.createElement('tr');
+                    messageEntry.innerHTML = `
+                        <td class="username">${message.user_name}</td>
+                        <td>${message.message}</td>
+                        <td>${new Date(message.timestamp).toLocaleTimeString()}</td>
+                    `;
+                    chatTable.appendChild(messageEntry);
+
+                    entriesCount++;
+                    entriesCountElement.textContent = entriesCount;
+                    messagesSet.add(message.id);
+                });
+            } catch (error) {
+                console.error('Error fetching chat messages:', error);
+            }
         }
 
-        function searchTable() {
+        searchInput.addEventListener('input', () => {
             const filter = searchInput.value.toLowerCase();
-            const rows = chatTable.getElementsByTagName('tr');
-
-            Array.from(rows).forEach(row => {
-                const usernameCell = row.cells[0];
-                const messageCell = row.cells[1];
-                const timeCell = row.cells[2];
-                const usernameText = usernameCell ? usernameCell.textContent.toLowerCase() : '';
-                const messageText = messageCell ? messageCell.textContent.toLowerCase() : '';
-                const timeText = timeCell ? timeCell.textContent.toLowerCase() : '';
-
-                if (usernameText.includes(filter) || messageText.includes(filter) || timeText.includes(filter)) {
+            const rows = chatTable.querySelectorAll('tr');
+            rows.forEach(row => {
+                const username = row.querySelector('.username').textContent.toLowerCase();
+                const message = row.cells[1].textContent.toLowerCase();
+                const time = row.cells[2].textContent.toLowerCase();
+                if (username.includes(filter) || message.includes(filter) || time.includes(filter)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
                 }
             });
-        }
+        });
     </script>
 </body>
 </html>
