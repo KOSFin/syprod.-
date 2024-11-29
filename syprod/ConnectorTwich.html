@@ -3,23 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch Chat Tracker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js" integrity="sha512-lJf8jjZGeqje5D2SM2lRLgIjPRfgg22XAY7YSttuR2TjYmD4uoEit8MdCSvI+aC0PZ02I2x2btCTF7P4cCzEdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Twitch Chat Activity Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #121212;
             color: #f1f1f1;
             margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
         }
 
         #app {
-            text-align: center;
             width: 90%;
             max-width: 800px;
         }
@@ -27,216 +25,155 @@
         input, button, select {
             padding: 10px;
             font-size: 16px;
-            margin: 10px;
-        }
-
-        #chat, #stats, #settings {
-            margin-top: 20px;
-            padding: 10px;
+            margin: 10px 5px;
             background: #1e1e1e;
-            border-radius: 10px;
-            height: 300px;
-            width: 100%;
-            overflow-y: auto;
+            color: #f1f1f1;
+            border: 1px solid #333;
+            border-radius: 5px;
         }
 
-        .message, .subscriber {
-            margin: 5px 0;
-        }
-
-        .username {
-            color: #1db954;
-            font-weight: bold;
+        button:hover {
+            background-color: #333;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        table, th, td {
-            border: 1px solid #444;
+            margin-top: 20px;
         }
 
         th, td {
-            padding: 8px;
+            padding: 10px;
+            border: 1px solid #333;
             text-align: left;
         }
 
         th {
-            background-color: #333;
+            background-color: #1e1e1e;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         #timer {
+            font-size: 20px;
             margin-top: 10px;
-            font-size: 18px;
+        }
+
+        .scrollable {
+            max-height: 300px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Twitch Chat Tracker</h1>
-        <button id="auth">Login with Twitch</button>
-
-        <div id="settings">
-            <h2>Settings</h2>
-            <label for="activityType">Track Activity:</label>
+        <h1>Twitch Chat Activity Tracker</h1>
+        <div class="controls">
             <select id="activityType">
-                <option value="messages">All Messages</option>
-                <option value="word">Specific Word</option>
+                <option value="allMessages">All Messages</option>
+                <option value="specificWord">Specific Word</option>
                 <option value="subscriptions">Subscriptions</option>
             </select>
-            <br>
-            <label for="wordInput">Word to Track:</label>
-            <input type="text" id="wordInput" placeholder="Enter word (optional)" disabled>
-            <br>
-            <button id="startTracking">Start Tracking</button>
-            <button id="stopTracking" disabled>Stop Tracking</button>
+            <input type="text" id="keyword" placeholder="Enter keyword (for specific word)">
+            <button id="start">Start</button>
+            <button id="stop" disabled>Stop</button>
         </div>
-
-        <div id="chat"></div>
-        <div id="stats">
-            <h2>Activity Stats</h2>
-            <div id="timer">Timer: 0s</div>
-            <div>Tracked Entries: <span id="entryCount">0</span></div>
-            <table id="activityTable">
+        <p id="timer">Timer: 00:00</p>
+        <div class="scrollable">
+            <table>
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Username</th>
-                        <th>Activity</th>
+                        <th>Message/Info</th>
                         <th>Time</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody id="results">
+                    <tr><td colspan="4">No data yet</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        const authButton = document.getElementById('auth');
-        const startTrackingButton = document.getElementById('startTracking');
-        const stopTrackingButton = document.getElementById('stopTracking');
-        const wordInput = document.getElementById('wordInput');
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
         const activityTypeSelect = document.getElementById('activityType');
-        const chatContainer = document.getElementById('chat');
-        const statsContainer = document.getElementById('stats');
-        const entryCountElement = document.getElementById('entryCount');
-        const activityTableBody = document.getElementById('activityTable').getElementsByTagName('tbody')[0];
-        const timerElement = document.getElementById('timer');
-        
-        let username = '';
-        let accessToken = '';
-        let interval;
-        let activities = [];
-        let timer = 0;
+        const keywordInput = document.getElementById('keyword');
+        const resultsTable = document.getElementById('results');
+        const timerDisplay = document.getElementById('timer');
 
-        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Replace with your Twitch client ID
-        const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
-
-        authButton.addEventListener('click', () => {
-            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
-            window.location.href = authUrl;
-        });
-
-        // Extract access token from URL
-        const hash = window.location.hash;
-        if (hash.includes('access_token')) {
-            const params = new URLSearchParams(hash.substring(1));
-            accessToken = params.get('access_token');
-            if (accessToken) {
-                fetchUserInfo();
-            }
-        }
-
-        async function fetchUserInfo() {
-            try {
-                const headers = {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Client-Id': clientId
-                };
-
-                const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
-                const user = response.data.data[0];
-                username = user.login;
-                chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
-            } catch (error) {
-                console.error('Error fetching user info:', error);
-                chatContainer.innerHTML = '<p>Failed to fetch chat info. Check console for details.</p>';
-            }
-        }
-
-        startTrackingButton.addEventListener('click', startTracking);
-        stopTrackingButton.addEventListener('click', stopTracking);
-
-        function startTracking() {
-            activities = [];
-            entryCountElement.textContent = '0';
-            activityTableBody.innerHTML = '';
-            timer = 0;
-            startTimer();
-
-            const activityType = activityTypeSelect.value;
-            const word = wordInput.value.trim().toLowerCase();
-
-            // Enable/disable word input based on selected activity
-            wordInput.disabled = activityType !== 'word';
-
-            if (activityType === 'messages') {
-                // Simulate listening to chat messages (this should be replaced with actual chat logic)
-                setInterval(() => trackMessage({ username: 'user1', message: 'участвую' }), 1000);
-            } else if (activityType === 'subscriptions') {
-                // Simulate listening to subscriptions (this should be replaced with actual subscription logic)
-                setInterval(() => trackSubscription({ username: 'user2' }), 2000);
-            } else if (activityType === 'word') {
-                // Simulate tracking messages with specific word
-                setInterval(() => {
-                    if (Math.random() > 0.5) trackMessage({ username: 'user3', message: 'участвую' });
-                }, 1000);
-            }
-
-            startTrackingButton.disabled = true;
-            stopTrackingButton.disabled = false;
-        }
-
-        function stopTracking() {
-            clearInterval(interval);
-            stopTrackingButton.disabled = true;
-            startTrackingButton.disabled = false;
-        }
+        let timer = null;
+        let elapsedSeconds = 0;
+        let entries = [];
+        let isRunning = false;
 
         function startTimer() {
-            interval = setInterval(() => {
-                timer++;
-                timerElement.textContent = `Timer: ${timer}s`;
+            elapsedSeconds = 0;
+            timer = setInterval(() => {
+                elapsedSeconds++;
+                const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+                const seconds = String(elapsedSeconds % 60).padStart(2, '0');
+                timerDisplay.textContent = `Timer: ${minutes}:${seconds}`;
             }, 1000);
         }
 
-        function trackMessage(message) {
-            const activityType = activityTypeSelect.value;
-            const word = wordInput.value.trim().toLowerCase();
-
-            if (activityType === 'messages' || (activityType === 'word' && message.message.toLowerCase().includes(word))) {
-                activities.push({ username: message.username, activity: message.message, time: new Date().toLocaleTimeString() });
-                updateActivityTable();
-            }
+        function stopTimer() {
+            clearInterval(timer);
         }
 
-        function trackSubscription(subscription) {
-            activities.push({ username: subscription.username, activity: 'Subscribed', time: new Date().toLocaleTimeString() });
-            updateActivityTable();
+        function addEntry(username, info, time) {
+            entries.push({ username, info, time });
+            renderTable();
         }
 
-        function updateActivityTable() {
-            entryCountElement.textContent = activities.length;
-            activityTableBody.innerHTML = '';
-            activities.forEach(activity => {
-                const row = activityTableBody.insertRow();
-                row.insertCell(0).textContent = activity.username;
-                row.insertCell(1).textContent = activity.activity;
-                row.insertCell(2).textContent = activity.time;
+        function renderTable() {
+            resultsTable.innerHTML = '';
+            entries.forEach((entry, index) => {
+                const row = `<tr>
+                    <td>${index + 1}</td>
+                    <td>${entry.username}</td>
+                    <td>${entry.info}</td>
+                    <td>${entry.time}</td>
+                </tr>`;
+                resultsTable.innerHTML += row;
             });
         }
+
+        startButton.addEventListener('click', () => {
+            const activityType = activityTypeSelect.value;
+            const keyword = keywordInput.value.trim().toLowerCase();
+            entries = [];
+            renderTable();
+
+            if (activityType === 'specificWord' && !keyword) {
+                alert('Please enter a keyword for specific word tracking.');
+                return;
+            }
+
+            isRunning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+
+            startTimer();
+
+            console.log(`Started tracking activity: ${activityType}, keyword: "${keyword}"`);
+        });
+
+        stopButton.addEventListener('click', () => {
+            isRunning = false;
+            stopButton.disabled = true;
+            startButton.disabled = false;
+
+            stopTimer();
+            console.log('Stopped tracking.');
+        });
+
     </script>
 </body>
 </html>
