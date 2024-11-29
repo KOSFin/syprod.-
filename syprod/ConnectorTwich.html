@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial="initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2Wchat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
@@ -97,35 +97,30 @@
             font-weight: bold;
         }
 
-        #connect-section {
-            text-align: center;
-            padding: 20px;
-            background: #6f33b8;
-            border-radius: 10px;
-            width: 60%;
-            margin: 30px auto;
+        #integrate-twitch {
+            background-color: #9146FF;
             color: white;
-        }
-
-        #connect-section button {
-            background-color: #6f33b8;
-            border: none;
-            color: white;
-            font-size: 18px;
             padding: 10px 20px;
+            border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 15px;
         }
 
-        #connect-section button:hover {
-            background-color: #5a2d9e;
+        #integrate-twitch:hover {
+            background-color: #6c2de2;
         }
 
-        .search-bar {
-            margin-bottom: 20px;
-            padding: 10px;
-            width: 100%;
+        #no-token {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #search {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            background-color: #303030;
         }
     </style>
 </head>
@@ -133,16 +128,13 @@
     <div id="app">
         <h1>Twitch Raffle Tool</h1>
 
-        <!-- Section for connecting to Twitch if no token is found -->
-        <div id="connect-section" style="display: none;">
-            <h2>Connect your Twitch Account</h2>
-            <p>Click the button below to integrate your Twitch account and start interacting with the chat!</p>
-            <a href="https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=pxie3yypaf51ctb0gmvz7m76fq4z0c&redirect_uri=https://syprod.ru/ConnectorTwich.html&scope=chat:read">
-                <button>Connect to Twitch</button>
-            </a>
+        <div id="no-token" style="display: none;">
+            <p>Welcome to Twitch Raffle Tool. Connect your Twitch account to start counting messages!</p>
+            <button id="integrate-twitch">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+            </button>
         </div>
 
-        <!-- User info section, shown after successful login -->
         <div id="user-info" style="display: none;">
             <img id="user-avatar" src="" alt="User Avatar">
             <span id="user-name"></span>
@@ -170,9 +162,8 @@
             <div>Entries: <span id="entriesCount">0</span></div>
         </div>
 
-        <input class="search-bar" type="text" id="searchInput" placeholder="Search by username, message, or time...">
-
         <div id="chat">
+            <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
             <table>
                 <thead>
                     <tr>
@@ -198,8 +189,9 @@
         const userInfoDiv = document.getElementById('user-info');
         const userNameSpan = document.getElementById('user-name');
         const userAvatarImg = document.getElementById('user-avatar');
-        const searchInput = document.getElementById('searchInput');
-        const connectSection = document.getElementById('connect-section');
+        const searchInput = document.getElementById('search');
+        const noTokenDiv = document.getElementById('no-token');
+        const integrateButton = document.getElementById('integrate-twitch');
 
         let username = '';
         let accessToken = '';
@@ -208,6 +200,7 @@
         let entriesCount = 0;
         let counting = false;
         let messagesSet = new Set();
+        let chatData = [];
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
@@ -222,10 +215,16 @@
             accessToken = params.get('access_token');
             if (accessToken) {
                 connectToChat();
+            } else {
+                noTokenDiv.style.display = 'block';
             }
         } else {
-            connectSection.style.display = 'block';
+            noTokenDiv.style.display = 'block';
         }
+
+        integrateButton.addEventListener('click', () => {
+            window.location.href = `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=chat:read`;
+        });
 
         startButton.addEventListener('click', () => {
             if (!counting) {
@@ -271,58 +270,77 @@
                 userNameSpan.textContent = username;
                 userInfoDiv.style.display = 'flex';
 
-                fetchChatMessages();
+                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+                socket.onopen = () => {
+                    socket.send('CAP REQ :twitch.tv/tags');
+                    socket.send(`PASS oauth:${accessToken}`);
+                    socket.send(`NICK ${username}`);
+                    socket.send(`JOIN #${username}`);
+                };
+
+                socket.onmessage = (message) => {
+                    const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+                    if (match) {
+                        const [, user, message] = match;
+                        const time = new Date().toLocaleTimeString();
+
+                        if (isMessageValid(user, message)) {
+                            updateChatTable(user, message, time);
+                        }
+                    }
+                };
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.error(error);
             }
         }
 
-        async function fetchChatMessages() {
-            const queryParams = {
-                broadcaster_id: 'your_broadcaster_id', // Replace with the broadcaster ID
-                first: 50 // Number of messages to fetch
-            };
-            const headers = {
-                'Authorization': `Bearer ${accessToken}`,
-                'Client-Id': clientId
-            };
+        function isMessageValid(user, message) {
+            if (activitySelect.value === 'all_messages') {
+                return true;
+            }
 
-            try {
-                const response = await axios.get('https://api.twitch.tv/helix/streams', { headers, params: queryParams });
-                const messages = response.data.data;
+            if (activitySelect.value === 'specific_messages' && message.includes('участвую')) {
+                return true;
+            }
 
-                messages.forEach(message => {
-                    const messageEntry = document.createElement('tr');
-                    messageEntry.innerHTML = `
-                        <td class="username">${message.user_name}</td>
-                        <td>${message.message}</td>
-                        <td>${new Date(message.timestamp).toLocaleTimeString()}</td>
-                    `;
-                    chatTable.appendChild(messageEntry);
+            if (activitySelect.value === 'custom_keyword' && message.includes(customKeywordInput.value)) {
+                return true;
+            }
 
-                    entriesCount++;
-                    entriesCountElement.textContent = entriesCount;
-                    messagesSet.add(message.id);
-                });
-            } catch (error) {
-                console.error('Error fetching chat messages:', error);
+            return false;
+        }
+
+        function updateChatTable(user, message, time) {
+            if (!messagesSet.has(message)) {
+                messagesSet.add(message);
+                entriesCount++;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="username">${user}</td>
+                    <td>${message}</td>
+                    <td>${time}</td>
+                `;
+                chatTable.appendChild(row);
+                entriesCountElement.textContent = entriesCount;
             }
         }
 
-        searchInput.addEventListener('input', () => {
-            const filter = searchInput.value.toLowerCase();
+        function filterChat() {
+            const query = searchInput.value.toLowerCase();
             const rows = chatTable.querySelectorAll('tr');
             rows.forEach(row => {
-                const username = row.querySelector('.username').textContent.toLowerCase();
-                const message = row.cells[1].textContent.toLowerCase();
-                const time = row.cells[2].textContent.toLowerCase();
-                if (username.includes(filter) || message.includes(filter) || time.includes(filter)) {
-                    row.style.display = '';
+                const cells = row.getElementsByTagName('td');
+                const username = cells[0].textContent.toLowerCase();
+                const message = cells[1].textContent.toLowerCase();
+                const time = cells[2].textContent.toLowerCase();
+                if (username.includes(query) || message.includes(query) || time.includes(query)) {
+                    row.classList.remove('highlight');
                 } else {
-                    row.style.display = 'none';
+                    row.classList.add('highlight');
                 }
             });
-        });
+        }
     </script>
 </body>
 </html>
