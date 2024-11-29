@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial="1.0">
     <title>2Wchat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
@@ -97,40 +97,45 @@
             font-weight: bold;
         }
 
-        #integrate-btn {
-            background: #6a4c9c;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
+        .search {
             margin-top: 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        #integrate-btn img {
-            margin-right: 8px;
-            vertical-align: middle;
+        #connect-btn {
+            background-color: #9146FF;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
         }
+
+        #connect-btn img {
+            width: 20px;
+            margin-right: 10px;
+        }
+
     </style>
 </head>
 <body>
     <div id="app">
         <h1>Twitch Raffle Tool</h1>
 
-        <!-- Интеграция с Twitch (кнопка для подключения) -->
-        <div id="integration-info" style="display: none;">
-            <p>Для использования инструмента Twitch, вам необходимо авторизоваться через Twitch.</p>
-            <button id="integrate-btn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Twitch_logo_2019.svg/1200px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="24" />
-                Подключиться к Twitch
-            </button>
-        </div>
-
         <div id="user-info" style="display: none;">
             <img id="user-avatar" src="" alt="User Avatar">
             <span id="user-name"></span>
+        </div>
+
+        <div id="connect-section" style="display: none;">
+            <button id="connect-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Twitch_logo_2019.svg/2560px-Twitch_logo_2019.svg.png" alt="Twitch Logo">
+                Connect with Twitch
+            </button>
         </div>
 
         <div id="settings">
@@ -150,13 +155,16 @@
             <button id="stop" disabled>Stop</button>
         </div>
 
+        <div class="search">
+            <input type="text" id="searchInput" placeholder="Search by username, message or time" onkeyup="searchTable()">
+        </div>
+
         <div id="info">
             <div class="timer">Timer: <span id="timer">0:00</span></div>
             <div>Entries: <span id="entriesCount">0</span></div>
         </div>
 
         <div id="chat">
-            <input type="text" id="searchInput" placeholder="Search chat..." style="width: 100%; padding: 10px; margin-bottom: 10px;">
             <table>
                 <thead>
                     <tr>
@@ -182,9 +190,9 @@
         const userInfoDiv = document.getElementById('user-info');
         const userNameSpan = document.getElementById('user-name');
         const userAvatarImg = document.getElementById('user-avatar');
+        const connectSection = document.getElementById('connect-section');
+        const connectButton = document.getElementById('connect-btn');
         const searchInput = document.getElementById('searchInput');
-        const integrateBtn = document.getElementById('integrate-btn');
-        const integrationInfoDiv = document.getElementById('integration-info');
 
         let username = '';
         let accessToken = '';
@@ -193,7 +201,6 @@
         let entriesCount = 0;
         let counting = false;
         let messagesSet = new Set();
-        let chatMessages = [];
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
@@ -206,16 +213,13 @@
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
-            if (accessToken) {
-                connectToChat();
-            } else {
-                integrationInfoDiv.style.display = 'block';
-            }
+            if (accessToken) connectToChat();
+            else connectSection.style.display = 'block'; // Show connection button if no token
         } else {
-            integrationInfoDiv.style.display = 'block';
+            connectSection.style.display = 'block'; // Show connection button if no token
         }
 
-        integrateBtn.addEventListener('click', () => {
+        connectButton.addEventListener('click', () => {
             window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=chat:read`;
         });
 
@@ -259,67 +263,54 @@
                 const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
                 const user = response.data.data[0];
                 username = user.login;
-                userAvatarImg.src = user.profile_image_url;
                 userNameSpan.textContent = username;
+                userAvatarImg.src = user.profile_image_url;
                 userInfoDiv.style.display = 'flex';
-
-                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv');
-                socket.onopen = () => {
-                    socket.send('PASS oauth:' + accessToken);
-                    socket.send('NICK ' + username);
-                    socket.send('JOIN #channel_name'); // Replace with your channel
-                };
-
-                socket.onmessage = function(event) {
-                    const message = event.data;
-                    if (message.includes('PRIVMSG')) {
-                        handleChatMessage(message);
-                    }
-                };
+                connectSection.style.display = 'none';
+                fetchMessages();
             } catch (error) {
-                console.error('Error connecting to Twitch:', error);
+                console.error(error);
+                alert('Failed to connect with Twitch. Please try again.');
             }
         }
 
-        function handleChatMessage(message) {
-            const regex = /:(\S+)!.*PRIVMSG #(\S+) :(.*)/;
-            const match = regex.exec(message);
-            if (match) {
-                const username = match[1];
-                const chatMessage = match[3];
-                const time = new Date().toLocaleTimeString();
-                if (!messagesSet.has(chatMessage)) {
-                    messagesSet.add(chatMessage);
-                    entriesCount++;
-                    chatMessages.push({ username, chatMessage, time });
-                    entriesCountElement.textContent = entriesCount;
-                    displayMessages();
-                }
-            }
-        }
-
-        function displayMessages() {
-            chatTable.innerHTML = '';
-            chatMessages.forEach(msg => {
+        function fetchMessages() {
+            // Example: Replace with actual API fetching and filtering logic
+            setInterval(() => {
                 const row = document.createElement('tr');
+                const message = `Message ${entriesCount + 1} from ${username}`;
+                const date = new Date().toLocaleString();
+
                 row.innerHTML = `
-                    <td class="username">${msg.username}</td>
-                    <td>${msg.chatMessage}</td>
-                    <td>${msg.time}</td>
+                    <td class="username">${username}</td>
+                    <td>${message}</td>
+                    <td>${date}</td>
                 `;
                 chatTable.appendChild(row);
-            });
+                entriesCount++;
+                entriesCountElement.textContent = entriesCount;
+            }, 1000); // Simulate new messages every 1 second
         }
 
-        searchInput.addEventListener('input', (event) => {
-            const searchText = event.target.value.toLowerCase();
-            const filteredMessages = chatMessages.filter(msg => 
-                msg.username.toLowerCase().includes(searchText) ||
-                msg.chatMessage.toLowerCase().includes(searchText) ||
-                msg.time.toLowerCase().includes(searchText)
-            );
-            displayMessages(filteredMessages);
-        });
+        function searchTable() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = chatTable.getElementsByTagName('tr');
+
+            Array.from(rows).forEach(row => {
+                const usernameCell = row.cells[0];
+                const messageCell = row.cells[1];
+                const timeCell = row.cells[2];
+                const usernameText = usernameCell ? usernameCell.textContent.toLowerCase() : '';
+                const messageText = messageCell ? messageCell.textContent.toLowerCase() : '';
+                const timeText = timeCell ? timeCell.textContent.toLowerCase() : '';
+
+                if (usernameText.includes(filter) || messageText.includes(filter) || timeText.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>
