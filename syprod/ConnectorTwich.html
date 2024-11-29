@@ -17,16 +17,19 @@
             justify-content: center;
             height: 100vh;
         }
+
         #app {
             text-align: center;
             width: 90%;
             max-width: 600px;
         }
+
         input, button {
             padding: 10px;
             font-size: 16px;
             margin: 10px;
         }
+
         #chat {
             margin-top: 20px;
             padding: 10px;
@@ -35,9 +38,11 @@
             height: 400px;
             overflow-y: auto;
         }
+
         .message {
             margin: 5px 0;
         }
+
         .username {
             color: #1db954;
             font-weight: bold;
@@ -57,16 +62,15 @@
         let username = '';
         let accessToken = '';
 
-        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Replace with your Twitch client ID
+        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
-        // Trigger OAuth2 login process
         authButton.addEventListener('click', () => {
             const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
             window.location.href = authUrl;
         });
 
-        // Extract access token from URL
+        // Extract access token from URL hash
         const hash = window.location.hash;
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
@@ -78,7 +82,6 @@
             }
         }
 
-        // Fetch chat data using access token
         async function fetchChat() {
             try {
                 const headers = {
@@ -86,52 +89,60 @@
                     'Client-Id': clientId
                 };
 
+                // Fetch user information
                 const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
                 const user = response.data.data[0];
                 username = user.login;
 
                 chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
-                fetchChatMessages(); // Start receiving chat messages
-            } catch (error) {
-                console.error('Error fetching user:', error);
-                chatContainer.innerHTML = '<p>Failed to fetch user. Check console for details.</p>';
-            }
-        }
 
-        // Fetch chat messages - placeholder logic
-        async function fetchChatMessages() {
-            // Example using the Twitch API to get stream data, as real-time messages via EventSub require Webhooks/WebSockets which can't be handled client-side
-            try {
-                const headers = {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Client-Id': clientId
-                };
+                // Use Twitch WebSocket for chat connection
+                connectToChat(user.id);
 
-                // Fetching stream information as an example
-                const streamResponse = await axios.get(`https://api.twitch.tv/helix/streams?user_login=${username}`, { headers });
-
-                if (streamResponse.data.data.length > 0) {
-                    chatContainer.innerHTML += `<p>${username} is live! Watching...</p>`;
-                } else {
-                    chatContainer.innerHTML += `<p>${username} is offline.</p>`;
-                }
-
-                // Simulate chat messages being sent (since actual chat messages need webhook or socket)
-                setTimeout(() => {
-                    const message = `Test message in ${username}'s chat!`;
-                    displayMessage('TwitchDev', message);
-                }, 2000);
             } catch (error) {
                 console.error('Error fetching chat:', error);
+                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
             }
         }
 
-        // Display a chat message
+        // WebSocket to listen for Twitch chat messages (using Twitch IRC)
+        function connectToChat(userId) {
+            const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+            socket.onopen = () => {
+                socket.send(`PASS oauth:${accessToken}`);
+                socket.send(`NICK ${username}`);
+                socket.send(`JOIN #${username}`); // Join the chat room
+
+                chatContainer.innerHTML += `<p>Joined chat room for ${username}</p>`;
+            };
+
+            socket.onmessage = (event) => {
+                const message = event.data;
+                if (message.includes('PRIVMSG')) {
+                    const messageParts = message.split(' :');
+                    const msgText = messageParts[1];
+                    const username = messageParts[0].split('!')[0].substring(1); // Extract username
+                    displayMessage(username, msgText);
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket closed');
+            };
+        }
+
+        // Display chat message
         function displayMessage(username, message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            messageDiv.innerHTML = `<span class="username">${username}:</span> ${message}`;
-            chatContainer.appendChild(messageDiv);
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<span class="username">${username}:</span> ${message}`;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to the bottom
         }
     </script>
 </body>
