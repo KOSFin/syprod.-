@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch Chat Activity Tracker</title>
+    <title>Twitch Chat Mirror</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
         body {
@@ -11,169 +11,139 @@
             background-color: #121212;
             color: #f1f1f1;
             margin: 0;
-            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
 
         #app {
+            text-align: center;
             width: 90%;
-            max-width: 800px;
+            max-width: 600px;
         }
 
-        input, button, select {
+        input, button {
             padding: 10px;
             font-size: 16px;
-            margin: 10px 5px;
-            background: #1e1e1e;
-            color: #f1f1f1;
-            border: 1px solid #333;
-            border-radius: 5px;
+            margin: 10px;
         }
 
-        button:hover {
-            background-color: #333;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        #chat {
             margin-top: 20px;
-        }
-
-        th, td {
             padding: 10px;
-            border: 1px solid #333;
-            text-align: left;
-        }
-
-        th {
-            background-color: #1e1e1e;
-        }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        #timer {
-            font-size: 20px;
-            margin-top: 10px;
-        }
-
-        .scrollable {
-            max-height: 300px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            height: 400px;
             overflow-y: auto;
+        }
+
+        .message {
+            margin: 5px 0;
+        }
+
+        .username {
+            color: #1db954;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Twitch Chat Activity Tracker</h1>
-        <div class="controls">
-            <select id="activityType">
-                <option value="allMessages">All Messages</option>
-                <option value="specificWord">Specific Word</option>
-                <option value="subscriptions">Subscriptions</option>
-            </select>
-            <input type="text" id="keyword" placeholder="Enter keyword (for specific word)">
-            <button id="start">Start</button>
-            <button id="stop" disabled>Stop</button>
-        </div>
-        <p id="timer">Timer: 00:00</p>
-        <div class="scrollable">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Username</th>
-                        <th>Message/Info</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody id="results">
-                    <tr><td colspan="4">No data yet</td></tr>
-                </tbody>
-            </table>
-        </div>
+        <h1>Twitch Chat Mirror</h1>
+        <button id="auth">Login with Twitch</button>
+        <div id="chat"></div>
     </div>
 
     <script>
-        const startButton = document.getElementById('start');
-        const stopButton = document.getElementById('stop');
-        const activityTypeSelect = document.getElementById('activityType');
-        const keywordInput = document.getElementById('keyword');
-        const resultsTable = document.getElementById('results');
-        const timerDisplay = document.getElementById('timer');
+        const authButton = document.getElementById('auth');
+        const chatContainer = document.getElementById('chat');
+        let username = '';
+        let accessToken = '';
 
-        let timer = null;
-        let elapsedSeconds = 0;
-        let entries = [];
-        let isRunning = false;
+        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
+        const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
-        function startTimer() {
-            elapsedSeconds = 0;
-            timer = setInterval(() => {
-                elapsedSeconds++;
-                const minutes = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
-                const seconds = String(elapsedSeconds % 60).padStart(2, '0');
-                timerDisplay.textContent = `Timer: ${minutes}:${seconds}`;
-            }, 1000);
-        }
+        authButton.addEventListener('click', () => {
+            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
+            window.location.href = authUrl;
+        });
 
-        function stopTimer() {
-            clearInterval(timer);
-        }
+        // Extract access token from URL hash
+        const hash = window.location.hash;
+        if (hash.includes('access_token')) {
+            const params = new URLSearchParams(hash.substring(1));
+            accessToken = params.get('access_token');
 
-        function addEntry(username, info, time) {
-            entries.push({ username, info, time });
-            renderTable();
-        }
-
-        function renderTable() {
-            resultsTable.innerHTML = '';
-            entries.forEach((entry, index) => {
-                const row = `<tr>
-                    <td>${index + 1}</td>
-                    <td>${entry.username}</td>
-                    <td>${entry.info}</td>
-                    <td>${entry.time}</td>
-                </tr>`;
-                resultsTable.innerHTML += row;
-            });
-        }
-
-        startButton.addEventListener('click', () => {
-            const activityType = activityTypeSelect.value;
-            const keyword = keywordInput.value.trim().toLowerCase();
-            entries = [];
-            renderTable();
-
-            if (activityType === 'specificWord' && !keyword) {
-                alert('Please enter a keyword for specific word tracking.');
-                return;
+            if (accessToken) {
+                chatContainer.innerHTML = '<p>Connected! Fetching chat...</p>';
+                fetchChat();
             }
+        }
 
-            isRunning = true;
-            startButton.disabled = true;
-            stopButton.disabled = false;
+        async function fetchChat() {
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Client-Id': clientId
+                };
 
-            startTimer();
+                // Fetch user information
+                const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
+                const user = response.data.data[0];
+                username = user.login;
 
-            console.log(`Started tracking activity: ${activityType}, keyword: "${keyword}"`);
-        });
+                chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
 
-        stopButton.addEventListener('click', () => {
-            isRunning = false;
-            stopButton.disabled = true;
-            startButton.disabled = false;
+                // Use Twitch WebSocket for chat connection
+                connectToChat(user.id);
 
-            stopTimer();
-            console.log('Stopped tracking.');
-        });
+            } catch (error) {
+                console.error('Error fetching chat:', error);
+                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
+            }
+        }
 
+        // WebSocket to listen for Twitch chat messages (using Twitch IRC)
+        function connectToChat(userId) {
+            const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+            socket.onopen = () => {
+                socket.send(`PASS oauth:${accessToken}`);
+                socket.send(`NICK ${username}`);
+                socket.send(`JOIN #${username}`); // Join the chat room
+
+                chatContainer.innerHTML += `<p>Joined chat room for ${username}</p>`;
+            };
+
+            socket.onmessage = (event) => {
+                const message = event.data;
+                if (message.includes('PRIVMSG')) {
+                    const messageParts = message.split(' :');
+                    const msgText = messageParts[1];
+                    const username = messageParts[0].split('!')[0].substring(1); // Extract username
+                    displayMessage(username, msgText);
+                }
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket closed');
+            };
+        }
+
+        // Display chat message
+        function displayMessage(username, message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<span class="username">${username}:</span> ${message}`;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to the bottom
+        }
     </script>
 </body>
 </html>
