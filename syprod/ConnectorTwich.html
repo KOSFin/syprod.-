@@ -282,7 +282,7 @@
                 socket.onmessage = (event) => {
                     const data = event.data; // Это будет строка, если сервер отправляет текстовые данные
                     console.log(data)
-                    const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+                    const match = data.match(/^@([^ ]+) :([^!]+)!([^@]+)@([^ ]+) PRIVMSG #[^ ]+ :(.*)$/);
                     console.log(match)
                     if (match) {
                         console.log('y')
