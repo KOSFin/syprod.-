@@ -97,30 +97,21 @@
             font-weight: bold;
         }
 
-        #integrate-twitch {
-            background-color: #9146FF;
+        #integrate-btn {
+            background: #6a4c9c;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #integrate-twitch:hover {
-            background-color: #6c2de2;
-        }
-
-        #no-token {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
             text-align: center;
-            margin-top: 50px;
+            text-decoration: none;
+            cursor: pointer;
+            margin-top: 20px;
         }
 
-        #search {
-            margin-bottom: 10px;
-        }
-
-        .highlight {
-            background-color: #303030;
+        #integrate-btn img {
+            margin-right: 8px;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -128,10 +119,12 @@
     <div id="app">
         <h1>Twitch Raffle Tool</h1>
 
-        <div id="no-token" style="display: none;">
-            <p>Welcome to Twitch Raffle Tool. Connect your Twitch account to start counting messages!</p>
-            <button id="integrate-twitch">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+        <!-- Интеграция с Twitch (кнопка для подключения) -->
+        <div id="integration-info" style="display: none;">
+            <p>Для использования инструмента Twitch, вам необходимо авторизоваться через Twitch.</p>
+            <button id="integrate-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Twitch_logo_2019.svg/1200px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="24" />
+                Подключиться к Twitch
             </button>
         </div>
 
@@ -163,7 +156,7 @@
         </div>
 
         <div id="chat">
-            <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
+            <input type="text" id="searchInput" placeholder="Search chat..." style="width: 100%; padding: 10px; margin-bottom: 10px;">
             <table>
                 <thead>
                     <tr>
@@ -189,9 +182,9 @@
         const userInfoDiv = document.getElementById('user-info');
         const userNameSpan = document.getElementById('user-name');
         const userAvatarImg = document.getElementById('user-avatar');
-        const searchInput = document.getElementById('search');
-        const noTokenDiv = document.getElementById('no-token');
-        const integrateButton = document.getElementById('integrate-twitch');
+        const searchInput = document.getElementById('searchInput');
+        const integrateBtn = document.getElementById('integrate-btn');
+        const integrationInfoDiv = document.getElementById('integration-info');
 
         let username = '';
         let accessToken = '';
@@ -200,7 +193,7 @@
         let entriesCount = 0;
         let counting = false;
         let messagesSet = new Set();
-        let chatData = [];
+        let chatMessages = [];
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
@@ -216,14 +209,14 @@
             if (accessToken) {
                 connectToChat();
             } else {
-                noTokenDiv.style.display = 'block';
+                integrationInfoDiv.style.display = 'block';
             }
         } else {
-            noTokenDiv.style.display = 'block';
+            integrationInfoDiv.style.display = 'block';
         }
 
-        integrateButton.addEventListener('click', () => {
-            window.location.href = `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=chat:read`;
+        integrateBtn.addEventListener('click', () => {
+            window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=chat:read`;
         });
 
         startButton.addEventListener('click', () => {
@@ -270,78 +263,63 @@
                 userNameSpan.textContent = username;
                 userInfoDiv.style.display = 'flex';
 
-                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-
+                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv');
                 socket.onopen = () => {
-                    socket.send('CAP REQ :twitch.tv/tags');
-                    socket.send(`PASS oauth:${accessToken}`);
-                    socket.send(`NICK ${username}`);
-                    socket.send(`JOIN #${username}`);
+                    socket.send('PASS oauth:' + accessToken);
+                    socket.send('NICK ' + username);
+                    socket.send('JOIN #channel_name'); // Replace with your channel
                 };
 
-                socket.onmessage = (message) => {
-                    const data = message.data;
-                    if (data.includes('PRIVMSG')) {
-                        const parts = data.split(' ');
-                        const user = parts[0].substring(1);
-                        const message = parts.slice(3).join(' ').substring(1);
-                        const time = new Date().toLocaleTimeString();
-                        if (isMessageValid(user, message)) {
-                            updateChatTable(user, message, time);
-                        }
+                socket.onmessage = function(event) {
+                    const message = event.data;
+                    if (message.includes('PRIVMSG')) {
+                        handleChatMessage(message);
                     }
                 };
             } catch (error) {
-                console.error(error);
+                console.error('Error connecting to Twitch:', error);
             }
         }
 
-        function isMessageValid(user, message) {
-            if (activitySelect.value === 'all_messages') {
-                return true;
+        function handleChatMessage(message) {
+            const regex = /:(\S+)!.*PRIVMSG #(\S+) :(.*)/;
+            const match = regex.exec(message);
+            if (match) {
+                const username = match[1];
+                const chatMessage = match[3];
+                const time = new Date().toLocaleTimeString();
+                if (!messagesSet.has(chatMessage)) {
+                    messagesSet.add(chatMessage);
+                    entriesCount++;
+                    chatMessages.push({ username, chatMessage, time });
+                    entriesCountElement.textContent = entriesCount;
+                    displayMessages();
+                }
             }
-
-            if (activitySelect.value === 'specific_messages' && message.includes('участвую')) {
-                return true;
-            }
-
-            if (activitySelect.value === 'custom_keyword' && message.includes(customKeywordInput.value)) {
-                return true;
-            }
-
-            return false;
         }
 
-        function updateChatTable(user, message, time) {
-            if (!messagesSet.has(message)) {
-                messagesSet.add(message);
-                entriesCount++;
+        function displayMessages() {
+            chatTable.innerHTML = '';
+            chatMessages.forEach(msg => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td class="username">${user}</td>
-                    <td>${message}</td>
-                    <td>${time}</td>
+                    <td class="username">${msg.username}</td>
+                    <td>${msg.chatMessage}</td>
+                    <td>${msg.time}</td>
                 `;
                 chatTable.appendChild(row);
-                entriesCountElement.textContent = entriesCount;
-            }
-        }
-
-        function filterChat() {
-            const query = searchInput.value.toLowerCase();
-            const rows = chatTable.querySelectorAll('tr');
-            rows.forEach(row => {
-                const cells = row.getElementsByTagName('td');
-                const username = cells[0].textContent.toLowerCase();
-                const message = cells[1].textContent.toLowerCase();
-                const time = cells[2].textContent.toLowerCase();
-                if (username.includes(query) || message.includes(query) || time.includes(query)) {
-                    row.classList.remove('highlight');
-                } else {
-                    row.classList.add('highlight');
-                }
             });
         }
+
+        searchInput.addEventListener('input', (event) => {
+            const searchText = event.target.value.toLowerCase();
+            const filteredMessages = chatMessages.filter(msg => 
+                msg.username.toLowerCase().includes(searchText) ||
+                msg.chatMessage.toLowerCase().includes(searchText) ||
+                msg.time.toLowerCase().includes(searchText)
+            );
+            displayMessages(filteredMessages);
+        });
     </script>
 </body>
 </html>
