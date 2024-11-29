@@ -279,7 +279,7 @@
                     socket.send(`JOIN #${username}`);
                 };
 
-                socket.onmessage = (message) => {
+                socket.onmessage = (data) => {
                     const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
                     if (match) {
                         const [, user, message] = match;
