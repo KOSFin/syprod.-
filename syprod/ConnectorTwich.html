@@ -58,50 +58,66 @@
     </div>
 
     <script>
-        const authButton = document.getElementById('auth');
         const chatContainer = document.getElementById('chat');
-
-        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Replace with your Twitch client ID
+        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Ваш Client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
         let accessToken = '';
-
-        authButton.addEventListener('click', () => {
+    
+        const channelName = 'twitch_channel'; // Замените на нужный канал
+    
+        // Авторизация
+        document.getElementById('auth').addEventListener('click', () => {
             const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
             window.location.href = authUrl;
         });
-
-        // Extract access token from URL
+    
+        // Извлечение токена из URL
         const hash = window.location.hash;
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
-
             if (accessToken) {
                 chatContainer.innerHTML = '<p>Connected! Fetching chat...</p>';
                 fetchChat();
             }
         }
-
-        async function fetchChat() {
-            try {
-                const headers = {
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Client-Id': clientId
-                };
-
-                const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
-                const user = response.data.data[0];
-                const username = user.login;
-
-                chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
-
-                // Replace this placeholder with chat fetch logic if using custom APIs or WebSocket connections
-                // For simplicity, implement additional chat APIs or websockets to retrieve chat messages.
-
-            } catch (error) {
-                console.error('Error fetching chat:', error);
-                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
-            }
+    
+        // Подключение к чату через WebSocket (IRC)
+        function fetchChat() {
+            const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    
+            socket.addEventListener('open', () => {
+                // Подключение к IRC каналу
+                socket.send(`PASS oauth:${accessToken}`);
+                socket.send(`NICK ${channelName}`);
+                socket.send(`JOIN #${channelName}`);
+            });
+    
+            socket.addEventListener('message', (event) => {
+                const message = event.data;
+                if (message.includes('PRIVMSG')) {
+                    const username = message.split('!')[0].substring(1);
+                    const chatMessage = message.split('PRIVMSG #')[1].split(' :')[1];
+                    displayMessage(username, chatMessage);
+                }
+            });
+    
+            socket.addEventListener('error', (event) => {
+                console.error('WebSocket error:', event);
+            });
+    
+            socket.addEventListener('close', () => {
+                console.log('WebSocket connection closed');
+            });
+        }
+    
+        // Отображение сообщения в чате
+        function displayMessage(username, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `<span class="username">${username}:</span> ${message}`;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Прокрутка вниз
         }
     </script>
 </body>
