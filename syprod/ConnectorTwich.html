@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch Chat Mirror</title>
+    <title>Twitch Chat Tracker</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js" integrity="sha512-lJf8jjZGeqje5D2SM2lRLgIjPRfgg22XAY7YSttuR2TjYmD4uoEit8MdCSvI+aC0PZ02I2x2btCTF7P4cCzEdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,21 +28,19 @@
             padding: 10px;
             font-size: 16px;
             margin: 10px;
-            background: #333;
-            border: 1px solid #555;
-            color: #fff;
         }
 
-        #chat {
+        #chat, #stats, #settings {
             margin-top: 20px;
             padding: 10px;
             background: #1e1e1e;
             border-radius: 10px;
-            height: 400px;
+            height: 300px;
+            width: 100%;
             overflow-y: auto;
         }
 
-        .message {
+        .message, .subscriber {
             margin: 5px 0;
         }
 
@@ -54,12 +51,12 @@
 
         table {
             width: 100%;
-            margin-top: 20px;
             border-collapse: collapse;
+            margin-top: 10px;
         }
 
         table, th, td {
-            border: 1px solid #555;
+            border: 1px solid #444;
         }
 
         th, td {
@@ -72,64 +69,73 @@
         }
 
         #timer {
-            margin-top: 20px;
+            margin-top: 10px;
             font-size: 18px;
-        }
-
-        #stop-btn {
-            background-color: #e44d4d;
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>Twitch Chat Mirror</h1>
+        <h1>Twitch Chat Tracker</h1>
         <button id="auth">Login with Twitch</button>
-        <div>
-            <label for="activity-type">Select Activity:</label>
-            <select id="activity-type">
-                <option value="all">All Messages</option>
-                <option value="participate">Messages with "участвую"</option>
-                <option value="sub">Subscriptions</option>
+
+        <div id="settings">
+            <h2>Settings</h2>
+            <label for="activityType">Track Activity:</label>
+            <select id="activityType">
+                <option value="messages">All Messages</option>
+                <option value="word">Specific Word</option>
+                <option value="subscriptions">Subscriptions</option>
             </select>
-            <button id="start-count">Start Counting</button>
-            <button id="stop-count" style="display: none;" id="stop-btn">Stop Counting</button>
+            <br>
+            <label for="wordInput">Word to Track:</label>
+            <input type="text" id="wordInput" placeholder="Enter word (optional)" disabled>
+            <br>
+            <button id="startTracking">Start Tracking</button>
+            <button id="stopTracking" disabled>Stop Tracking</button>
         </div>
-        <div id="timer"></div>
+
         <div id="chat"></div>
-        <table id="results" style="display: none;">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Message / Subscription</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div id="stats">
+            <h2>Activity Stats</h2>
+            <div id="timer">Timer: 0s</div>
+            <div>Tracked Entries: <span id="entryCount">0</span></div>
+            <table id="activityTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Activity</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const authButton = document.getElementById('auth');
-        const activitySelect = document.getElementById('activity-type');
-        const startCountButton = document.getElementById('start-count');
-        const stopCountButton = document.getElementById('stop-count');
-        const timerElement = document.getElementById('timer');
-        const resultsTable = document.getElementById('results').getElementsByTagName('tbody')[0];
+        const startTrackingButton = document.getElementById('startTracking');
+        const stopTrackingButton = document.getElementById('stopTracking');
+        const wordInput = document.getElementById('wordInput');
+        const activityTypeSelect = document.getElementById('activityType');
         const chatContainer = document.getElementById('chat');
+        const statsContainer = document.getElementById('stats');
+        const entryCountElement = document.getElementById('entryCount');
+        const activityTableBody = document.getElementById('activityTable').getElementsByTagName('tbody')[0];
+        const timerElement = document.getElementById('timer');
+        
         let username = '';
         let accessToken = '';
-        let activityType = 'all';
-        let counting = false;
-        let timerInterval;
-        let count = 0;
-        let activityData = [];
+        let interval;
+        let activities = [];
+        let timer = 0;
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Replace with your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
         authButton.addEventListener('click', () => {
-            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read+user:read:email+channel:read:subscriptions`;
+            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
             window.location.href = authUrl;
         });
 
@@ -139,12 +145,11 @@
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
             if (accessToken) {
-                chatContainer.innerHTML = '<p>Connected! Fetching chat...</p>';
-                fetchChat();
+                fetchUserInfo();
             }
         }
 
-        async function fetchChat() {
+        async function fetchUserInfo() {
             try {
                 const headers = {
                     'Authorization': `Bearer ${accessToken}`,
@@ -155,79 +160,82 @@
                 const user = response.data.data[0];
                 username = user.login;
                 chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
-
-                // Example: Listen for chat messages, replace with your WebSocket logic to fetch chat messages
-                // This is a placeholder for chat event listener setup
-                setupChatListener();
             } catch (error) {
-                console.error('Error fetching chat:', error);
-                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
+                console.error('Error fetching user info:', error);
+                chatContainer.innerHTML = '<p>Failed to fetch chat info. Check console for details.</p>';
             }
         }
 
-        function setupChatListener() {
-            // Placeholder for WebSocket or event listener that listens to chat messages
-            // Simulate chat messages for this example
-            setInterval(() => {
-                if (counting) {
-                    const username = 'User' + Math.floor(Math.random() * 1000);
-                    const message = Math.random() > 0.5 ? 'участвую' : 'Hello World';
-                    const timestamp = new Date().toLocaleTimeString();
+        startTrackingButton.addEventListener('click', startTracking);
+        stopTrackingButton.addEventListener('click', stopTracking);
 
-                    if (activityType === 'all' || (activityType === 'participate' && message.includes('участвую'))) {
-                        addToActivityData(username, message, timestamp);
-                    }
-                }
-            }, 1000);
-        }
-
-        function addToActivityData(username, message, timestamp) {
-            activityData.push({ username, message, timestamp });
-            count++;
-            updateResultsTable();
-        }
-
-        function updateResultsTable() {
-            resultsTable.innerHTML = '';
-            activityData.forEach(item => {
-                const row = resultsTable.insertRow();
-                const usernameCell = row.insertCell(0);
-                const messageCell = row.insertCell(1);
-                const timeCell = row.insertCell(2);
-
-                usernameCell.textContent = item.username;
-                messageCell.textContent = item.message;
-                timeCell.textContent = item.timestamp;
-            });
-
-            document.getElementById('results').style.display = 'block';
-            timerElement.textContent = `Counted ${count} entries`;
-        }
-
-        startCountButton.addEventListener('click', () => {
-            if (counting) return;
-            activityType = activitySelect.value;
-            counting = true;
-            count = 0;
-            activityData = [];
-            resultsTable.innerHTML = '';
-            document.getElementById('stop-count').style.display = 'inline-block';
+        function startTracking() {
+            activities = [];
+            entryCountElement.textContent = '0';
+            activityTableBody.innerHTML = '';
+            timer = 0;
             startTimer();
-        });
 
-        stopCountButton.addEventListener('click', () => {
-            counting = false;
-            document.getElementById('stop-count').style.display = 'none';
-            clearInterval(timerInterval);
-            timerElement.textContent = `Counting stopped. Final count: ${count} entries`;
-        });
+            const activityType = activityTypeSelect.value;
+            const word = wordInput.value.trim().toLowerCase();
+
+            // Enable/disable word input based on selected activity
+            wordInput.disabled = activityType !== 'word';
+
+            if (activityType === 'messages') {
+                // Simulate listening to chat messages (this should be replaced with actual chat logic)
+                setInterval(() => trackMessage({ username: 'user1', message: 'участвую' }), 1000);
+            } else if (activityType === 'subscriptions') {
+                // Simulate listening to subscriptions (this should be replaced with actual subscription logic)
+                setInterval(() => trackSubscription({ username: 'user2' }), 2000);
+            } else if (activityType === 'word') {
+                // Simulate tracking messages with specific word
+                setInterval(() => {
+                    if (Math.random() > 0.5) trackMessage({ username: 'user3', message: 'участвую' });
+                }, 1000);
+            }
+
+            startTrackingButton.disabled = true;
+            stopTrackingButton.disabled = false;
+        }
+
+        function stopTracking() {
+            clearInterval(interval);
+            stopTrackingButton.disabled = true;
+            startTrackingButton.disabled = false;
+        }
 
         function startTimer() {
-            let time = 0;
-            timerInterval = setInterval(() => {
-                time++;
-                timerElement.textContent = `Time elapsed: ${time}s | Count: ${count}`;
+            interval = setInterval(() => {
+                timer++;
+                timerElement.textContent = `Timer: ${timer}s`;
             }, 1000);
+        }
+
+        function trackMessage(message) {
+            const activityType = activityTypeSelect.value;
+            const word = wordInput.value.trim().toLowerCase();
+
+            if (activityType === 'messages' || (activityType === 'word' && message.message.toLowerCase().includes(word))) {
+                activities.push({ username: message.username, activity: message.message, time: new Date().toLocaleTimeString() });
+                updateActivityTable();
+            }
+        }
+
+        function trackSubscription(subscription) {
+            activities.push({ username: subscription.username, activity: 'Subscribed', time: new Date().toLocaleTimeString() });
+            updateActivityTable();
+        }
+
+        function updateActivityTable() {
+            entryCountElement.textContent = activities.length;
+            activityTableBody.innerHTML = '';
+            activities.forEach(activity => {
+                const row = activityTableBody.insertRow();
+                row.insertCell(0).textContent = activity.username;
+                row.insertCell(1).textContent = activity.activity;
+                row.insertCell(2).textContent = activity.time;
+            });
         }
     </script>
 </body>
