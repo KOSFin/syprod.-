@@ -247,16 +247,18 @@
             if (match) {
                 const [, user, message] = match;
                 const currentTime = new Date().toLocaleTimeString();
+        
+                // Создаем элементы таблицы
                 const tableRow = document.createElement('tr');
                 const usernameCell = document.createElement('td');
                 const messageCell = document.createElement('td');
                 const timeCell = document.createElement('td');
-
-                usernameCell.textContent = user;
-                messageCell.textContent = message;
-                timeCell.textContent = currentTime;
-
-                // Highlight the message if it contains the custom keyword or matches activity selection
+        
+                usernameCell.textContent = user; // Добавляем имя пользователя
+                messageCell.textContent = message; // Добавляем сообщение
+                timeCell.textContent = currentTime; // Добавляем время
+        
+                // Проверка активности и соответствие фильтру
                 const activity = activitySelect.value;
                 if (
                     (activity === 'specific_messages' && message.includes('участвую')) ||
@@ -264,12 +266,22 @@
                     activity === 'all_messages' ||
                     activity === 'subscriptions'
                 ) {
+                    // Проверка на уникальность сообщения
                     if (!messagesSet.has(user + message)) {
                         messagesSet.add(user + message);
                         entriesCount++;
                         entriesCountElement.textContent = entriesCount;
-                        tableRow.classList.add('highlight'); // Optional styling for highlighted messages
+        
+                        // Добавляем стиль выделения (по желанию)
+                        tableRow.classList.add('highlight');
+        
+                        // Добавляем данные в таблицу
                         chatTable.appendChild(tableRow);
+                        tableRow.appendChild(usernameCell);
+                        tableRow.appendChild(messageCell);
+                        tableRow.appendChild(timeCell);
+        
+                        // Добавляем стили для имени пользователя (например, зеленым цветом)
                         usernameCell.classList.add('username');
                     }
                 }
