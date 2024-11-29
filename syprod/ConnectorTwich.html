@@ -279,7 +279,8 @@
                     socket.send(`JOIN #${username}`);
                 };
 
-                socket.onmessage = (data) => {
+                socket.onmessage = (event) => {
+                    const data = event.data; // Это будет строка, если сервер отправляет текстовые данные
                     const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
                     if (match) {
                         const [, user, message] = match;
