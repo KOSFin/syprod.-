@@ -74,19 +74,52 @@
             font-size: 20px;
             margin-top: 10px;
         }
+
+        #user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        #user-info img {
+            border-radius: 50%;
+            margin-right: 10px;
+            width: 50px;
+            height: 50px;
+        }
+
+        #user-info span {
+            font-size: 18px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <h1>Twitch Raffle Tool</h1>
+
+        <div id="user-info" style="display: none;">
+            <img id="user-avatar" src="" alt="User Avatar">
+            <span id="user-name"></span>
+        </div>
+
         <div id="settings">
             <h2>Settings</h2>
             <label for="activity">Count activity:</label>
             <select id="activity">
                 <option value="all_messages">All Messages</option>
                 <option value="specific_messages">Messages with "участвую"</option>
+                <option value="custom_keyword">Custom Keyword</option>
                 <option value="subscriptions">Subscriptions</option>
             </select>
+            <div id="keyword-input" style="display: none;">
+                <label for="customKeyword">Custom Keyword:</label>
+                <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
+            </div>
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
         </div>
@@ -111,13 +144,17 @@
     </div>
 
     <script>
-        const authButton = document.getElementById('auth');
         const startButton = document.getElementById('start');
         const stopButton = document.getElementById('stop');
         const activitySelect = document.getElementById('activity');
         const timerElement = document.getElementById('timer');
         const entriesCountElement = document.getElementById('entriesCount');
         const chatTable = document.getElementById('chatTable');
+        const customKeywordInput = document.getElementById('customKeyword');
+        const keywordInputDiv = document.getElementById('keyword-input');
+        const userInfoDiv = document.getElementById('user-info');
+        const userNameSpan = document.getElementById('user-name');
+        const userAvatarImg = document.getElementById('user-avatar');
 
         let username = '';
         let accessToken = '';
@@ -125,13 +162,13 @@
         let timerInterval;
         let entriesCount = 0;
         let counting = false;
+        let messagesSet = new Set();
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
-        authButton?.addEventListener('click', () => {
-            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
-            window.location.href = authUrl;
+        activitySelect.addEventListener('change', () => {
+            keywordInputDiv.style.display = activitySelect.value === 'custom_keyword' ? 'block' : 'none';
         });
 
         const hash = window.location.hash;
@@ -148,6 +185,7 @@
                 stopButton.disabled = false;
                 timer = 0;
                 entriesCount = 0;
+                messagesSet.clear();
                 chatTable.innerHTML = '';
                 updateTimer();
                 timerInterval = setInterval(updateTimer, 1000);
@@ -180,6 +218,9 @@
                 const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
                 const user = response.data.data[0];
                 username = user.login;
+                userAvatarImg.src = user.profile_image_url;
+                userNameSpan.textContent = username;
+                userInfoDiv.style.display = 'flex';
 
                 const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
@@ -197,30 +238,44 @@
                 socket.onclose = () => console.log('WebSocket closed');
 
             } catch (error) {
-                console.error('Error connecting to chat:', error);
+                console.error('Error connecting to Twitch:', error);
             }
         }
 
-        function handleMessage(message) {
-            if (message.includes('PRIVMSG')) {
-                const parts = message.split(' :');
-                const msgText = parts[1];
-                const user = message.split('!')[0].substring(1);
-                const time = new Date().toLocaleTimeString();
+        function handleMessage(data) {
+            const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+            if (match) {
+                const [, user, message] = match;
+                const currentTime = new Date().toLocaleTimeString();
+                const tableRow = document.createElement('tr');
+                const usernameCell = document.createElement('td');
+                const messageCell = document.createElement('td');
+                const timeCell = document.createElement('td');
 
+                usernameCell.textContent = user;
+                messageCell.textContent = message;
+                timeCell.textContent = currentTime;
+
+                // Highlight the message if it contains the custom keyword or matches activity selection
                 const activity = activitySelect.value;
-                if (activity === 'all_messages' ||
-                    (activity === 'specific_messages' && msgText.includes('участвую')) ||
-                    activity === 'subscriptions') {
-                    entriesCount++;
-                    entriesCountElement.textContent = entriesCount;
-
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${user}</td><td>${msgText}</td><td>${time}</td>`;
-                    chatTable.appendChild(row);
+                if (
+                    (activity === 'specific_messages' && message.includes('участвую')) ||
+                    (activity === 'custom_keyword' && message.includes(customKeywordInput.value)) ||
+                    activity === 'all_messages' ||
+                    activity === 'subscriptions'
+                ) {
+                    if (!messagesSet.has(user + message)) {
+                        messagesSet.add(user + message);
+                        entriesCount++;
+                        entriesCountElement.textContent = entriesCount;
+                        tableRow.classList.add('highlight'); // Optional styling for highlighted messages
+                        chatTable.appendChild(tableRow);
+                        usernameCell.classList.add('username');
+                    }
                 }
             }
         }
     </script>
 </body>
 </html>
+
