@@ -281,12 +281,17 @@
 
                 socket.onmessage = (event) => {
                     const data = event.data; // Это будет строка, если сервер отправляет текстовые данные
+                    console.log(data)
                     const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+                    console.log(match)
                     if (match) {
+                        console.log('y')
                         const [, user, message] = match;
                         const time = new Date().toLocaleTimeString();
+                        console.log(user, message)
 
                         if (isMessageValid(user, message)) {
+                            console.log('yes')
                             updateChatTable(user, message, time);
                         }
                     }
