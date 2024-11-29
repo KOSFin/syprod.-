@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Chat Mirror</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js" integrity="sha512-lJf8jjZGeqje5D2SM2lRLgIjPRfgg22XAY7YSttuR2TjYmD4uoEit8MdCSvI+aC0PZ02I2x2btCTF7P4cCzEdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #f1f1f1;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #app {
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+        }
+
+        #chat {
+            margin-top: 20px;
+            padding: 10px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        .message {
+            margin: 5px 0;
+        }
+
+        .username {
+            color: #1db954;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Twitch Chat Mirror</h1>
+        <button id="auth">Login with Twitch</button>
+        <div id="chat"></div>
+    </div>
+
+    <script>
+        const authButton = document.getElementById('auth');
+        const chatContainer = document.getElementById('chat');
+
+        const clientId = '7r4t40wwgwpyefku8z0a4a6gu5wmh1'; // Replace with your Twitch client ID
+        const redirectUri = window.location.origin;
+        let accessToken = '';
+
+        authButton.addEventListener('click', () => {
+            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=chat:read`;
+            window.location.href = authUrl;
+        });
+
+        // Extract access token from URL
+        const hash = window.location.hash;
+        if (hash.includes('access_token')) {
+            const params = new URLSearchParams(hash.substring(1));
+            accessToken = params.get('access_token');
+
+            if (accessToken) {
+                chatContainer.innerHTML = '<p>Connected! Fetching chat...</p>';
+                fetchChat();
+            }
+        }
+
+        async function fetchChat() {
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Client-Id': clientId
+                };
+
+                const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
+                const user = response.data.data[0];
+                const username = user.login;
+
+                chatContainer.innerHTML = `<p>Connected to ${username}'s chat!</p>`;
+
+                // Replace this placeholder with chat fetch logic if using custom APIs or WebSocket connections
+                // For simplicity, implement additional chat APIs or websockets to retrieve chat messages.
+
+            } catch (error) {
+                console.error('Error fetching chat:', error);
+                chatContainer.innerHTML = '<p>Failed to fetch chat. Check console for details.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
