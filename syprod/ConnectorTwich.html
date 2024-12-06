@@ -366,10 +366,6 @@
             entriesCountElement.textContent = entriesCount;
         }
 
-        activitySelect.addEventListener('change', () => {
-            keywordInputDiv.style.display = activitySelect.value === 'custom_keyword' ? 'block' : 'none';
-        });
-
         function filterChat() {
             const query = searchInput.value.toLowerCase();
             const rows = chatTable.querySelectorAll('tr');
