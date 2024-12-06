@@ -7,42 +7,89 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e1e1e, #121212);
             color: #f1f1f1;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            padding: 0;
         }
 
         #app {
-            text-align: center;
-            width: 90%;
-            max-width: 800px;
-        }
-
-        input, button, select {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px;
-        }
-
-        #settings {
-            margin-bottom: 20px;
-            background: #1e1e1e;
+            margin: 20px auto;
+            max-width: 1000px;
             padding: 20px;
-            border-radius: 10px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #1db954;
+        }
+
+        .card {
+            background: #242424;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #user-info {
+            display: flex;
+            align-items: center;
+            justify-content: start;
+            gap: 15px;
+        }
+
+        #user-info img {
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            border: 2px solid #1db954;
+        }
+
+        #user-info .name {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #1db954;
+            color: #fff;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .button:hover {
+            background: #159441;
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        #settings select,
+        #settings input {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #121212;
+            color: #f1f1f1;
         }
 
         #chat {
-            margin-top: 20px;
-            padding: 10px;
-            background: #1e1e1e;
-            border-radius: 10px;
-            height: 400px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -53,98 +100,56 @@
 
         th, td {
             padding: 10px;
-            border: 1px solid #333;
             text-align: left;
         }
 
         th {
             background: #1db954;
+            color: #fff;
         }
 
-        .username {
-            color: #1db954;
-            font-weight: bold;
+        tr:nth-child(odd) {
+            background: #2a2a2a;
         }
 
-        .controls {
-            margin-top: 20px;
-        }
-
-        .timer {
-            font-size: 20px;
-            margin-top: 10px;
-        }
-
-        #user-info {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
+        tr:hover {
             background: #1e1e1e;
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        #user-info img {
-            border-radius: 50%;
-            margin-right: 10px;
-            width: 50px;
-            height: 50px;
-        }
-
-        #user-info span {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        #integrate-twitch {
-            background-color: #9146FF;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
         }
 
-        #integrate-twitch:hover {
-            background-color: #6c2de2;
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        #no-token {
-            text-align: center;
-            margin-top: 50px;
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #121212;
+            color: #f1f1f1;
         }
 
-        #search {
-            margin-bottom: 10px;
-        }
+        @media (max-width: 768px) {
+            #app {
+                padding: 10px;
+            }
 
-        .highlight {
-            background-color: #303030;
-        }
+            h1 {
+                font-size: 1.5rem;
+            }
 
-        #chatTable { width: 100%; border-collapse: collapse; }
-        #chatTable th, #chatTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        #chatTable tr:hover { background-color: #f5f5f5; cursor: pointer; }
-        .highlight { display: none; }
-        #userModal {
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            display: none;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
+            #user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
