@@ -145,13 +145,26 @@
             <label for="activity">Count activity:</label>
             <select id="activity">
                 <option value="all_messages">All Messages</option>
-                <option value="specific_messages">Messages with "участвую"</option>
                 <option value="custom_keyword">Custom Keyword</option>
                 <option value="subscriptions">Subscriptions</option>
             </select>
             <div id="keyword-input" style="display: none;">
                 <label for="customKeyword">Custom Keyword:</label>
                 <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
+                <label>
+                    <input type="radio" name="keywordMatchType" value="exact" checked>
+                    Exact Match
+                </label>
+                <label>
+                    <input type="radio" name="keywordMatchType" value="contains">
+                    Contains
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="mergeMessages">
+                    Merge messages from the same user
+                </label>
             </div>
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
@@ -313,32 +326,49 @@
             if (activitySelect.value === 'all_messages') {
                 return true;
             }
-
-            if (activitySelect.value === 'specific_messages' && message.includes('участвую')) {
-                return true;
+        
+            if (activitySelect.value === 'custom_keyword') {
+                const keyword = customKeywordInput.value.trim();
+                if (!keyword) return false;
+        
+                const matchType = document.querySelector('input[name="keywordMatchType"]:checked').value;
+                if (matchType === 'exact' && message === keyword) {
+                    return true;
+                }
+                if (matchType === 'contains' && message.includes(keyword)) {
+                    return true;
+                }
             }
-
-            if (activitySelect.value === 'custom_keyword' && message.includes(customKeywordInput.value)) {
-                return true;
-            }
-
+        
             return false;
         }
 
         function updateChatTable(user, message, time) {
-            if (!messagesSet.has(message)) {
-                messagesSet.add(message);
-                entriesCount++;
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="username">${user}</td>
-                    <td>${message}</td>
-                    <td>${time}</td>
-                `;
-                chatTable.appendChild(row);
-                entriesCountElement.textContent = entriesCount;
+            const mergeMessages = document.getElementById('mergeMessages').checked;
+        
+            if (mergeMessages) {
+                const existingRow = Array.from(chatTable.rows).find(row => row.querySelector('.username')?.textContent === user);
+                if (existingRow) {
+                    const messageCell = existingRow.cells[1];
+                    messageCell.textContent += ` | ${message}`;
+                    return;
+                }
             }
+        
+            entriesCount++;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="username">${user}</td>
+                <td>${message}</td>
+                <td>${time}</td>
+            `;
+            chatTable.appendChild(row);
+            entriesCountElement.textContent = entriesCount;
         }
+
+        activitySelect.addEventListener('change', () => {
+            keywordInputDiv.style.display = activitySelect.value === 'custom_keyword' ? 'block' : 'none';
+        });
 
         function filterChat() {
             const query = searchInput.value.toLowerCase();
