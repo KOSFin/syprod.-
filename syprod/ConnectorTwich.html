@@ -214,6 +214,7 @@
         let counting = false;
         let messagesSet = new Set();
         let chatData = [];
+        let socket;
 
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
@@ -286,7 +287,7 @@
                 userNameSpan.textContent = username;
                 userInfoDiv.style.display = 'flex';
 
-                const socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+                socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
                 socket.onopen = () => {
                     socket.send('CAP REQ :twitch.tv/tags');
