@@ -226,9 +226,7 @@
         if (hash.includes('access_token')) {
             const params = new URLSearchParams(hash.substring(1));
             accessToken = params.get('access_token');
-            if (accessToken) {
-                connectToChat();
-            } else {
+            if (!accessToken) {
                 noTokenDiv.style.display = 'block';
             }
         } else {
@@ -270,6 +268,11 @@
         }
 
         async function connectToChat() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                console.log("WebSocket is already connected");
+                return;
+            }
+            
             try {
                 const headers = {
                     'Authorization': `Bearer ${accessToken}`,
