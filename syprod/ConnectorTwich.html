@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #121212;
             color: #f1f1f1;
             margin: 0;
@@ -16,24 +16,18 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            text-align: center;
         }
 
         #app {
+            text-align: center;
             width: 90%;
             max-width: 800px;
         }
 
-        h1 {
-            font-size: 36px;
-            margin-bottom: 20px;
-            color: #9146FF;
-        }
-
-        #logo {
-            width: 50px;
-            height: 50px;
-            vertical-align: middle;
+        input, button, select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
         }
 
         #settings {
@@ -41,17 +35,44 @@
             background: #1e1e1e;
             padding: 20px;
             border-radius: 10px;
-            width: 100%;
-            display: inline-block;
         }
 
-        input, button, select {
+        #chat {
+            margin-top: 20px;
             padding: 10px;
-            font-size: 16px;
-            margin: 8px;
+            background: #1e1e1e;
+            border-radius: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
             width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
             border: 1px solid #333;
-            border-radius: 5px;
+            text-align: left;
+        }
+
+        th {
+            background: #1db954;
+        }
+
+        .username {
+            color: #1db954;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .timer {
+            font-size: 20px;
+            margin-top: 10px;
         }
 
         #user-info {
@@ -60,219 +81,150 @@
             justify-content: center;
             margin-bottom: 20px;
             background: #1e1e1e;
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
         }
 
         #user-info img {
             border-radius: 50%;
-            margin-right: 15px;
-            width: 60px;
-            height: 60px;
+            margin-right: 10px;
+            width: 50px;
+            height: 50px;
         }
 
         #user-info span {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            color: #9146FF;
         }
 
         #integrate-twitch {
             background-color: #9146FF;
             color: white;
-            padding: 12px 20px;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            width: 100%;
         }
 
         #integrate-twitch:hover {
             background-color: #6c2de2;
         }
 
-        .modal {
-            position: fixed;
-            z-index: 100;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: #2d2d2d;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 600px;
-            color: #f1f1f1;
-            position: relative;
-        }
-
-        .close {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            color: #fff;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .modal-content h3 {
-            color: #9146FF;
-        }
-
-        .modal-content img {
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
+        #no-token {
+            text-align: center;
+            margin-top: 50px;
         }
 
         #search {
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 500px;
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 5px;
-            background-color: #333;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #444;
-        }
-
-        th {
-            background-color: #9146FF;
-            color: white;
-        }
-
-        tr:hover {
-            background-color: #303030;
+            margin-bottom: 10px;
         }
 
         .highlight {
             background-color: #303030;
         }
 
-        .timer {
-            font-size: 20px;
-            margin-top: 10px;
-        }
-
+        #chatTable { width: 100%; border-collapse: collapse; }
+        #chatTable th, #chatTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #chatTable tr:hover { background-color: #f5f5f5; cursor: pointer; }
+        .highlight { display: none; }
         #userModal {
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
             display: none;
         }
-
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
         }
-
-        .controls button {
-            width: 48%;
-        }
-
     </style>
 </head>
 <body>
+    <div id="app">
+        <h1>Twitch Raffle Tool</h1>
 
-<div id="app">
-    <h1><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" id="logo"> 2cWhat</h1>
+        <div id="no-token" style="display: none;">
+            <p>Welcome to Twitch Raffle Tool. Connect your Twitch account to start counting messages!</p>
+            <button id="integrate-twitch">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+            </button>
+        </div>
 
-    <div id="no-token" style="display: none;">
-        <p>Welcome to 2cWhat! Connect your Twitch account to start counting messages!</p>
-        <button id="integrate-twitch">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
-        </button>
-    </div>
+        <div id="user-info" style="display: none;">
+            <img id="user-avatar" src="" alt="User Avatar">
+            <span id="user-name"></span>
+        </div>
 
-    <div id="user-info" style="display: none;">
-        <img id="user-avatar" src="" alt="User Avatar">
-        <span id="user-name"></span>
-    </div>
-
-    <div id="settings">
-        <h2>Settings</h2>
-        <label for="activity">Count activity:</label>
-        <select id="activity">
-            <option value="all_messages">All Messages</option>
-            <option value="custom_keyword">Custom Keyword</option>
-            <option value="subscriptions">Subscriptions</option>
-        </select>
-
-        <div id="keyword-input" style="display: none;">
-            <label for="customKeyword">Custom Keyword:</label>
-            <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
-            <div>
+        <div id="settings">
+            <h2>Settings</h2>
+            <label for="activity">Count activity:</label>
+            <select id="activity">
+                <option value="all_messages">All Messages</option>
+                <option value="custom_keyword">Custom Keyword</option>
+                <option value="subscriptions">Subscriptions</option>
+            </select>
+            <div id="keyword-input" style="display: none;">
+                <label for="customKeyword">Custom Keyword:</label>
+                <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
                 <label>
-                    <input type="radio" name="keywordMatchType" value="exact" checked> Exact Match
+                    <input type="radio" name="keywordMatchType" value="exact" checked>
+                    Exact Match
                 </label>
                 <label>
-                    <input type="radio" name="keywordMatchType" value="contains"> Contains
+                    <input type="radio" name="keywordMatchType" value="contains">
+                    Contains
                 </label>
             </div>
-        </div>
-
-        <div>
-            <label>
-                <input type="checkbox" id="mergeMessages"> Merge messages from the same user
-            </label>
-        </div>
-        <div class="controls">
+            <div>
+                <label>
+                    <input type="checkbox" id="mergeMessages">
+                    Merge messages from the same user
+                </label>
+            </div>
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
         </div>
-    </div>
 
-    <div id="info">
-        <div class="timer">Timer: <span id="timer">0:00</span></div>
-        <div>Entries: <span id="entriesCount">0</span></div>
-    </div>
+        <div id="info">
+            <div class="timer">Timer: <span id="timer">0:00</span></div>
+            <div>Entries: <span id="entriesCount">0</span></div>
+        </div>
 
-    <div id="userModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="modalUserInfo">
-                <img id="modalUserAvatar" src="" alt="User Avatar">
-                <h3 id="modalUsername"></h3>
-                <p id="modalTwitchInfo"></p>
-                <div id="modalUserMessages"></div>
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalUserInfo">
+                    <img id="modalUserAvatar" src="" alt="User Avatar">
+                    <h3 id="modalUsername"></h3>
+                    <p id="modalTwitchInfo"></p>
+                    <div id="modalUserMessages"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="chat">
-        <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
-        <table id="chatTable">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Message</th>
-                    <th>Time</th>
-                </tr>
-            </thead>
-            <tbody id="chatTableBody"></tbody>
-        </table>
+        <div id="chat">
+            <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Message</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="chatTable"></tbody>
+            </table>
+        </div>
     </div>
-</div>
 
     <script>
         const startButton = document.getElementById('start');
