@@ -193,7 +193,7 @@
             </div>
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
-            <button id="downloadJsonButton">Скачать данные JSON</button>
+            <button id="exportDataButton">Скачать данные JSON</button>
         </div>
 
         <div id="info">
@@ -519,64 +519,52 @@
             document.getElementById('userModal').style.display = 'none';
         });
 
-        const downloadJsonButton = document.getElementById('downloadJsonButton');
+        document.getElementById('exportDataButton').addEventListener('click', exportData);
 
-        // Функция для формирования данных, которые будут экспортированы
-        function generateDataForWheel() {
-            const mergeMessages = document.getElementById('mergeMessages').checked; // Объединение сообщений
-            const users = [];
-        
-            // Пробегаем по всем строкам в таблице чата
-            const rows = Array.from(chatTable.rows);
-            rows.forEach(row => {
-                const user = row.querySelector('.username').textContent;
-                const messageCount = row.cells[1].textContent.split(' | ').length; // Количество сообщений
-                const subscriptions = 1; // Можете добавить логику для подсчета подписок, если нужно
+        function exportData() {
+            // Собираем данные пользователей, например, из chatTable
+            let participants = [];
+            let rows = chatTable.querySelectorAll('tr');
+            
+            rows.forEach((row, index) => {
+                const username = row.querySelector('.username').textContent;
+                const messageCount = row.querySelector('.messageCount').textContent; // Получаем количество сообщений пользователя
+                const subscriptionsCount = row.querySelector('.subscriptionsCount').textContent; // Получаем количество подписок пользователя
                 
-                const userEntry = {
-                    username: user,
-                    messageCount: messageCount,
-                    subscriptions: subscriptions,
-                    probability: calculateProbability(messageCount, subscriptions) // Расчет вероятности
-                };
-        
-                // Если объединили сообщения, добавляем их
-                if (mergeMessages) {
-                    const existingUser = users.find(u => u.username === user);
-                    if (existingUser) {
-                        existingUser.messageCount += messageCount;
-                        existingUser.probability += userEntry.probability;
-                    } else {
-                        users.push(userEntry);
-                    }
-                } else {
-                    users.push(userEntry);
-                }
+                const amount = calculateAmount(messageCount, subscriptionsCount);
+                
+                participants.push({
+                    fastId: index + 1, // Используем индекс для fastId (или используйте уникальное значение)
+                    id: Math.random().toString(), // Генерация уникального id
+                    extra: null, // По желанию можно добавить дополнительные данные
+                    amount: amount,
+                    name: username,
+                    investors: [] // Если необходимо добавить инвесторов, можно использовать аналогичный способ
+                });
             });
         
-            return users;
+            // Создаем JSON-объект в нужном формате
+            const jsonData = JSON.stringify(participants, null, 4);
+            
+            // Создаем ссылку для скачивания JSON файла
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'auction_data.json';
+            a.click();
+            URL.revokeObjectURL(url); // Освобождаем память после скачивания
         }
         
-        // Функция для вычисления вероятности
-        function calculateProbability(messageCount, subscriptions) {
-            return (messageCount + subscriptions) * 10; // Пример расчета вероятности
+        // Функция для расчета вероятности (amount) на основе сообщений и подписок
+        function calculateAmount(messages, subscriptions) {
+            let amount = 0;
+            // Логика для вычисления вероятности (amount) на основе количества сообщений и подписок
+            if (messages > 10) amount += 10;
+            if (subscriptions > 5) amount += 5;
+            
+            return amount;
         }
-        
-        // Функция для создания JSON и скачивания файла
-        function downloadJson() {
-            const data = generateDataForWheel();
-        
-            // Создаем файл JSON
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'wheel_data.json';
-            link.click();
-        }
-        
-        // Обработчик события для кнопки скачивания
-        downloadJsonButton.addEventListener('click', downloadJson);
-
 
         // Optional: Add sorting buttons
         const tableHeaders = document.querySelectorAll('#chat table th');
