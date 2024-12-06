@@ -6,9 +6,8 @@
     <title>2cWhat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
-        /* Основной стиль */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #121212;
             color: #f1f1f1;
             margin: 0;
@@ -17,112 +16,136 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            overflow: hidden;
+            text-align: center;
         }
 
         #app {
-            text-align: center;
-            width: 100%;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 90%;
+            max-width: 800px;
         }
 
-        /* Заголовок и иконка */
         h1 {
             font-size: 36px;
+            margin-bottom: 20px;
             color: #9146FF;
-            margin-bottom: 10px;
         }
 
-        h1 span {
-            color: #1db954;
-        }
-
-        h1 img {
-            width: 30px;
+        #logo {
+            width: 50px;
+            height: 50px;
             vertical-align: middle;
-            margin-right: 10px;
         }
 
-        /* Стили для аккаунта Twitch */
+        #settings {
+            margin-bottom: 20px;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            display: inline-block;
+        }
+
+        input, button, select {
+            padding: 10px;
+            font-size: 16px;
+            margin: 8px;
+            width: 100%;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+
         #user-info {
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-bottom: 20px;
             background: #1e1e1e;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 30px;
-            width: 100%;
-            max-width: 450px;
-            margin-top: 20px;
         }
 
         #user-info img {
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            margin-right: 10px;
+            margin-right: 15px;
+            width: 60px;
+            height: 60px;
         }
 
         #user-info span {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
-            color: #fff;
+            color: #9146FF;
         }
 
-        /* Модальное окно */
-        #userModal {
-            display: none;
+        #integrate-twitch {
+            background-color: #9146FF;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #integrate-twitch:hover {
+            background-color: #6c2de2;
+        }
+
+        .modal {
             position: fixed;
-            z-index: 1000;
-            left: 0;
+            z-index: 100;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            align-items: center;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
             justify-content: center;
-            padding: 20px;
+            align-items: center;
         }
 
         .modal-content {
-            background-color: #1e1e1e;
-            border-radius: 10px;
+            background-color: #2d2d2d;
             padding: 20px;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
             color: #f1f1f1;
-            font-size: 24px;
-            margin: 0;
+            position: relative;
         }
 
-        .modal-header .close {
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
             color: #fff;
-            font-size: 30px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
         }
 
-        .modal-content img {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            margin-right: 15px;
+        .modal-content h3 {
+            color: #9146FF;
         }
 
-        /* Стиль таблицы */
+        .modal-content img {
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        #search {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background-color: #333;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -132,172 +155,124 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border: 1px solid #333;
+            border-bottom: 1px solid #444;
         }
 
         th {
-            background-color: #1db954;
+            background-color: #9146FF;
             color: white;
         }
 
         tr:hover {
-            background-color: #2c2c2c;
+            background-color: #303030;
         }
 
-        /* Стили для настроек */
-        #settings {
-            margin-bottom: 30px;
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            width: 100%;
-            max-width: 450px;
+        .highlight {
+            background-color: #303030;
         }
 
-        label {
-            font-size: 14px;
-            display: block;
-            margin: 5px 0;
-            color: #f1f1f1;
-        }
-
-        select, input[type="text"], button {
-            padding: 10px;
-            font-size: 14px;
-            margin-top: 10px;
-            width: 100%;
-            border-radius: 5px;
-            border: 1px solid #333;
-            background: #333;
-            color: #fff;
-        }
-
-        select, input[type="text"] {
-            margin-bottom: 15px;
-        }
-
-        button {
-            background-color: #9146FF;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #6c2de2;
-        }
-
-        /* Мобильная адаптация */
-        @media (max-width: 768px) {
-            #user-info {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            h1 {
-                font-size: 28px;
-            }
-
-            .modal-content {
-                width: 80%;
-            }
-        }
-
-        /* Таймер и количество записей */
-        .timer, #entriesCount {
-            font-size: 18px;
-            color: #fff;
+        .timer {
+            font-size: 20px;
             margin-top: 10px;
         }
 
-        #search {
-            width: 100%;
-            padding: 12px;
-            font-size: 14px;
-            border: 1px solid #333;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            background-color: #1e1e1e;
-            color: #fff;
+        #userModal {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .controls button {
+            width: 48%;
         }
 
     </style>
 </head>
 <body>
-    <div id="app">
-        <h1><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo">2cWhat</h1>
 
-        <div id="no-token" style="display: none;">
-            <p>Welcome to 2cWhat! Connect your Twitch account to start tracking your messages.</p>
-            <button id="integrate-twitch">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30"> Integrate with Twitch
-            </button>
-        </div>
+<div id="app">
+    <h1><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" id="logo"> 2cWhat</h1>
 
-        <div id="user-info" style="display: none;">
-            <img id="user-avatar" src="" alt="User Avatar">
-            <span id="user-name"></span>
-        </div>
+    <div id="no-token" style="display: none;">
+        <p>Welcome to 2cWhat! Connect your Twitch account to start counting messages!</p>
+        <button id="integrate-twitch">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+        </button>
+    </div>
 
-        <div id="settings">
-            <h2>Settings</h2>
-            <label for="activity">Count activity:</label>
-            <select id="activity">
-                <option value="all_messages">All Messages</option>
-                <option value="custom_keyword">Custom Keyword</option>
-                <option value="subscriptions">Subscriptions</option>
-            </select>
+    <div id="user-info" style="display: none;">
+        <img id="user-avatar" src="" alt="User Avatar">
+        <span id="user-name"></span>
+    </div>
 
-            <div id="keyword-input" style="display: none;">
-                <label for="customKeyword">Custom Keyword:</label>
-                <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
-            </div>
+    <div id="settings">
+        <h2>Settings</h2>
+        <label for="activity">Count activity:</label>
+        <select id="activity">
+            <option value="all_messages">All Messages</option>
+            <option value="custom_keyword">Custom Keyword</option>
+            <option value="subscriptions">Subscriptions</option>
+        </select>
 
+        <div id="keyword-input" style="display: none;">
+            <label for="customKeyword">Custom Keyword:</label>
+            <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
             <div>
                 <label>
-                    <input type="checkbox" id="mergeMessages"> Merge messages from the same user
+                    <input type="radio" name="keywordMatchType" value="exact" checked> Exact Match
+                </label>
+                <label>
+                    <input type="radio" name="keywordMatchType" value="contains"> Contains
                 </label>
             </div>
+        </div>
 
+        <div>
+            <label>
+                <input type="checkbox" id="mergeMessages"> Merge messages from the same user
+            </label>
+        </div>
+        <div class="controls">
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
         </div>
+    </div>
 
-        <div id="info">
-            <div class="timer">Timer: <span id="timer">0:00</span></div>
-            <div>Entries: <span id="entriesCount">0</span></div>
-        </div>
+    <div id="info">
+        <div class="timer">Timer: <span id="timer">0:00</span></div>
+        <div>Entries: <span id="entriesCount">0</span></div>
+    </div>
 
-        <div id="chat">
-            <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Message</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody id="chatTable"></tbody>
-            </table>
-        </div>
-
-        <!-- Модальное окно -->
-        <div id="userModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>User Info</h3>
-                    <span class="close">&times;</span>
-                </div>
-                <div id="modalUserInfo">
-                    <img id="modalUserAvatar" src="" alt="User Avatar">
-                    <span id="modalUsername"></span>
-                    <p id="modalTwitchInfo"></p>
-                </div>
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalUserInfo">
+                <img id="modalUserAvatar" src="" alt="User Avatar">
+                <h3 id="modalUsername"></h3>
+                <p id="modalTwitchInfo"></p>
+                <div id="modalUserMessages"></div>
             </div>
         </div>
     </div>
+
+    <div id="chat">
+        <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
+        <table id="chatTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="chatTableBody"></tbody>
+        </table>
+    </div>
+</div>
 
     <script>
         const startButton = document.getElementById('start');
