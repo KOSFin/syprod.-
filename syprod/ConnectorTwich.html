@@ -193,6 +193,7 @@
             </div>
             <button id="start">Start</button>
             <button id="stop" disabled>Stop</button>
+            <button id="downloadJsonButton">Скачать данные JSON</button>
         </div>
 
         <div id="info">
@@ -517,6 +518,65 @@
         document.querySelector('.close').addEventListener('click', () => {
             document.getElementById('userModal').style.display = 'none';
         });
+
+        const downloadJsonButton = document.getElementById('downloadJsonButton');
+
+        // Функция для формирования данных, которые будут экспортированы
+        function generateDataForWheel() {
+            const mergeMessages = document.getElementById('mergeMessages').checked; // Объединение сообщений
+            const users = [];
+        
+            // Пробегаем по всем строкам в таблице чата
+            const rows = Array.from(chatTable.rows);
+            rows.forEach(row => {
+                const user = row.querySelector('.username').textContent;
+                const messageCount = row.cells[1].textContent.split(' | ').length; // Количество сообщений
+                const subscriptions = 1; // Можете добавить логику для подсчета подписок, если нужно
+                
+                const userEntry = {
+                    username: user,
+                    messageCount: messageCount,
+                    subscriptions: subscriptions,
+                    probability: calculateProbability(messageCount, subscriptions) // Расчет вероятности
+                };
+        
+                // Если объединили сообщения, добавляем их
+                if (mergeMessages) {
+                    const existingUser = users.find(u => u.username === user);
+                    if (existingUser) {
+                        existingUser.messageCount += messageCount;
+                        existingUser.probability += userEntry.probability;
+                    } else {
+                        users.push(userEntry);
+                    }
+                } else {
+                    users.push(userEntry);
+                }
+            });
+        
+            return users;
+        }
+        
+        // Функция для вычисления вероятности
+        function calculateProbability(messageCount, subscriptions) {
+            return (messageCount + subscriptions) * 10; // Пример расчета вероятности
+        }
+        
+        // Функция для создания JSON и скачивания файла
+        function downloadJson() {
+            const data = generateDataForWheel();
+        
+            // Создаем файл JSON
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'wheel_data.json';
+            link.click();
+        }
+        
+        // Обработчик события для кнопки скачивания
+        downloadJsonButton.addEventListener('click', downloadJson);
+
 
         // Optional: Add sorting buttons
         const tableHeaders = document.querySelectorAll('#chat table th');
