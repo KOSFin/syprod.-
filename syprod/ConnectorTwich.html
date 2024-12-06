@@ -122,6 +122,30 @@
         .highlight {
             background-color: #303030;
         }
+
+        #chatTable { width: 100%; border-collapse: collapse; }
+        #chatTable th, #chatTable td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        #chatTable tr:hover { background-color: #f5f5f5; cursor: pointer; }
+        .highlight { display: none; }
+        #userModal {
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            display: none;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
     </style>
 </head>
 <body>
@@ -173,6 +197,18 @@
         <div id="info">
             <div class="timer">Timer: <span id="timer">0:00</span></div>
             <div>Entries: <span id="entriesCount">0</span></div>
+        </div>
+
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalUserInfo">
+                    <img id="modalUserAvatar" src="" alt="User Avatar">
+                    <h3 id="modalUsername"></h3>
+                    <p id="modalTwitchInfo"></p>
+                    <div id="modalUserMessages"></div>
+                </div>
+            </div>
         </div>
 
         <div id="chat">
@@ -347,44 +383,149 @@
             return false;
         }
 
+        // Enhanced updateChatTable function
         function updateChatTable(user, message, time) {
             const mergeMessages = document.getElementById('mergeMessages').checked;
-        
+            let messageText = message;
+
             if (mergeMessages) {
                 const existingRow = Array.from(chatTable.rows).find(row => row.querySelector('.username')?.textContent === user);
                 if (existingRow) {
                     const messageCell = existingRow.cells[1];
-                    messageCell.textContent += ` | ${message}`;
+                    const currentMessages = messageCell.textContent;
+                    
+                    // Limit merged messages with ellipsis
+                    const combinedMessages = currentMessages + ' | ' + message;
+                    messageCell.textContent = combinedMessages.length > 100 
+                        ? combinedMessages.substring(0, 97) + '...' 
+                        : combinedMessages;
+                    
                     return;
                 }
             }
-        
+
             entriesCount++;
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="username">${user}</td>
-                <td>${message}</td>
+                <td class="username" data-user="${user}">${user}</td>
+                <td>${messageText}</td>
                 <td>${time}</td>
             `;
+            
+            // Add click event for user details
+            row.addEventListener('click', () => showUserModal(user));
+            
             chatTable.appendChild(row);
             entriesCountElement.textContent = entriesCount;
         }
 
+        // User Modal Functions
+        function showUserModal(username) {
+            const modalUsername = document.getElementById('modalUsername');
+            const modalUserAvatar = document.getElementById('modalUserAvatar');
+            const modalTwitchInfo = document.getElementById('modalTwitchInfo');
+            const modalUserMessages = document.getElementById('modalUserMessages');
+            const userModal = document.getElementById('userModal');
+
+            // Fetch Twitch user info
+            fetchTwitchUserInfo(username).then(userInfo => {
+                modalUsername.textContent = username;
+                modalUserAvatar.src = userInfo.profile_image_url;
+                modalTwitchInfo.innerHTML = `
+                    Зарегистрирован: ${new Date(userInfo.created_at).toLocaleDateString()}<br>
+                    Тип канала: ${userInfo.broadcaster_type || 'Обычный пользователь'}
+                `;
+
+                // Collect user messages
+                const userMessages = getUserMessages(username);
+                modalUserMessages.innerHTML = `
+                    <h4>Сообщения пользователя:</h4>
+                    ${userMessages.slice(0, 5).map(msg => `<p>${msg}</p>`).join('')}
+                    ${userMessages.length > 5 ? '...' : ''}
+                `;
+
+                userModal.style.display = 'block';
+            });
+        }
+
+        // Sorting and Filtering Enhancements
+        function sortTable(column, type = 'string') {
+            const rows = Array.from(chatTable.rows);
+            const sortedRows = rows.sort((a, b) => {
+                const cellA = a.cells[column].textContent;
+                const cellB = b.cells[column].textContent;
+
+                if (type === 'number') {
+                    return parseFloat(cellA) - parseFloat(cellB);
+                }
+                return cellA.localeCompare(cellB);
+            });
+
+            chatTable.innerHTML = '';
+            sortedRows.forEach(row => chatTable.appendChild(row));
+        }
+
+        // Enhanced Search Function
         function filterChat() {
             const query = searchInput.value.toLowerCase();
             const rows = chatTable.querySelectorAll('tr');
+            let visibleCount = 0;
+
             rows.forEach(row => {
                 const cells = row.getElementsByTagName('td');
                 const username = cells[0].textContent.toLowerCase();
                 const message = cells[1].textContent.toLowerCase();
                 const time = cells[2].textContent.toLowerCase();
-                if (username.includes(query) || message.includes(query) || time.includes(query)) {
-                    row.classList.remove('highlight');
-                } else {
-                    row.classList.add('highlight');
-                }
+
+                const isVisible = 
+                    username.includes(query) || 
+                    message.includes(query) || 
+                    time.includes(query);
+
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
             });
+
+            entriesCountElement.textContent = `${visibleCount} / ${entriesCount}`;
         }
+
+        // Utility function to get user messages
+        function getUserMessages(username) {
+            return Array.from(chatTable.rows)
+                .filter(row => row.querySelector('.username').textContent === username)
+                .map(row => row.cells[1].textContent);
+        }
+
+        // Async function to fetch Twitch user info
+        async function fetchTwitchUserInfo(username) {
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Client-Id': clientId
+            };
+
+            try {
+                const response = await axios.get(`https://api.twitch.tv/helix/users?login=${username}`, { headers });
+                return response.data.data[0];
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                return {};
+            }
+        }
+
+        // Close modal functionality
+        document.querySelector('.close').addEventListener('click', () => {
+            document.getElementById('userModal').style.display = 'none';
+        });
+
+        // Optional: Add sorting buttons
+        const tableHeaders = document.querySelectorAll('#chat table th');
+        tableHeaders.forEach((header, index) => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', () => {
+                const sortType = index === 1 ? 'string' : index === 2 ? 'date' : 'string';
+                sortTable(index, sortType);
+            });
+        });
     </script>
 </body>
 </html>
