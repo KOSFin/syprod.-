@@ -6,149 +6,143 @@
     <title>2Wchat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1e1e1e, #121212);
-            color: #f1f1f1;
+        /* Основные стили */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #0f0f0f, #1c1c1c);
+            color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: 100vh;
         }
 
         #app {
-            margin: 20px auto;
-            max-width: 1000px;
-            padding: 20px;
-            background: #1a1a1a;
-            border-radius: 15px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 900px;
         }
 
         h1 {
-            font-size: 1.8rem;
+            font-size: 2rem;
+            color: #ffffff;
             margin-bottom: 20px;
             text-align: center;
-            color: #1db954;
         }
 
+        /* Карточки */
         .card {
-            background: #242424;
-            border-radius: 12px;
-            padding: 15px;
+            background: #202020;
+            border-radius: 15px;
+            padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
+        /* Информация об аккаунте */
         #user-info {
             display: flex;
             align-items: center;
-            justify-content: start;
             gap: 15px;
         }
 
         #user-info img {
-            border-radius: 50%;
             width: 60px;
             height: 60px;
-            border: 2px solid #1db954;
+            border-radius: 50%;
+            border: 2px solid #6c63ff;
         }
 
-        #user-info .name {
+        #user-name {
             font-size: 1.2rem;
-            font-weight: bold;
+            font-weight: 600;
         }
 
-        .button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background: #1db954;
-            color: #fff;
-            font-weight: bold;
-            transition: background 0.3s;
+        /* Таймер и статистика */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
         }
 
-        .button:hover {
-            background: #159441;
+        .stats div {
+            font-size: 1.1rem;
         }
 
-        .button:disabled {
-            background: #666;
-            cursor: not-allowed;
+        .timer {
+            font-size: 1.5rem;
+            font-weight: 600;
         }
 
-        #settings select,
-        #settings input {
-            width: 100%;
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #333;
-            border-radius: 8px;
-            background: #121212;
-            color: #f1f1f1;
-        }
-
-        #chat {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
+        /* Таблица чата */
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
         th, td {
-            padding: 10px;
             text-align: left;
+            padding: 10px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #333;
         }
 
         th {
-            background: #1db954;
+            background-color: #6c63ff;
             color: #fff;
         }
 
-        tr:nth-child(odd) {
-            background: #2a2a2a;
-        }
-
         tr:hover {
-            background: #1e1e1e;
-            cursor: pointer;
+            background: #303030;
         }
 
-        .search-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-bar input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #333;
+        /* Кнопки и инпуты */
+        button, input, select {
+            padding: 10px 15px;
+            font-size: 1rem;
+            border: none;
             border-radius: 8px;
-            background: #121212;
-            color: #f1f1f1;
+            margin: 5px;
         }
 
+        button {
+            background: #6c63ff;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5753d6;
+        }
+
+        input {
+            background: #1e1e1e;
+            color: #fff;
+        }
+
+        /* Мобильная адаптация */
         @media (max-width: 768px) {
-            #app {
-                padding: 10px;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            #user-info {
+            .stats {
                 flex-direction: column;
-                text-align: center;
+                gap: 10px;
             }
 
-            .search-bar {
-                flex-direction: column;
+            table {
+                font-size: 0.8rem;
+            }
+
+            #user-info img {
+                width: 50px;
+                height: 50px;
             }
         }
     </style>
