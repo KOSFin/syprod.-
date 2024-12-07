@@ -151,18 +151,22 @@
 </head>
 <body>
     <div id="app">
-        <h1>Twitch Raffle Tool</h1>
-
-        <div id="no-token" style="display: none;">
-            <p>Welcome to Twitch Raffle Tool. Connect your Twitch account to start counting messages!</p>
+        <div id="header">
+            <img src="2cwhat.webp" alt="lg" width="50">
+            <h1>2CwHAT</h1>
+        </div>
+    
+        <div id="no-token">
+            <p>Welcome to 2CwHAT. Connect your Twitch account to start counting messages!</p>
             <button id="integrate-twitch">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Twitch_logo_2019.svg/800px-Twitch_logo_2019.svg.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+                <img src="https://m.media-amazon.com/images/I/21kRx-CJsUL._AC_UL800_QL65_.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
             </button>
         </div>
-
+    
         <div id="user-info" style="display: none;">
-            <img id="user-avatar" src="" alt="User Avatar">
+            <img id="user-avatar" src="" alt="UsAv" width="50">
             <span id="user-name"></span>
+            <button id="logout" title="Logout">🚪</button>
         </div>
 
         <div id="settings">
@@ -238,11 +242,14 @@
         const customKeywordInput = document.getElementById('customKeyword');
         const keywordInputDiv = document.getElementById('keyword-input');
         const userInfoDiv = document.getElementById('user-info');
+        const settingsDiv = document.getElementById('settings');
+        const chatDiv = document.getElementById('chat');
         const userNameSpan = document.getElementById('user-name');
         const userAvatarImg = document.getElementById('user-avatar');
         const searchInput = document.getElementById('search');
         const noTokenDiv = document.getElementById('no-token');
         const integrateButton = document.getElementById('integrate-twitch');
+        const logoutButton = document.getElementById('logout');
 
         let username = '';
         let accessToken = '';
@@ -257,19 +264,49 @@
         const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
         const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
 
+        // Проверяем токен в localStorage
+        let accessToken = localStorage.getItem('twitchToken');
+        if (!accessToken) {
+            handleAuthorization();
+        }
+
+        logoutButton.addEventListener('click', () => {
+            logout();
+        });
+
+        function logout() {
+            localStorage.removeItem('twitchToken');
+            alert('Вы вышли из аккаунта.');
+            showNoTokenScreen();
+        }
+
+        function handleAuthorization() {
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.substring(1));
+                accessToken = params.get('access_token');
+                if (accessToken) {
+                    localStorage.setItem('twitchToken', accessToken);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    initializeUser(accessToken);
+                } else {
+                    alert('Ошибка авторизации. Попробуйте снова.');
+                    showNoTokenScreen();
+                }
+            } else {
+                showNoTokenScreen();
+            }
+        }
+
         activitySelect.addEventListener('change', () => {
             keywordInputDiv.style.display = activitySelect.value === 'custom_keyword' ? 'block' : 'none';
         });
 
-        const hash = window.location.hash;
-        if (hash.includes('access_token')) {
-            const params = new URLSearchParams(hash.substring(1));
-            accessToken = params.get('access_token');
-            if (!accessToken) {
-                noTokenDiv.style.display = 'block';
-            }
-        } else {
+        function showNoTokenScreen() {
             noTokenDiv.style.display = 'block';
+            userInfoDiv.style.display = 'none';
+            settingsDiv.style.display = 'none';
+            chatDiv.style.display = 'none';
         }
 
         integrateButton.addEventListener('click', () => {
@@ -361,6 +398,7 @@
                 };
             } catch (error) {
                 console.error(error);
+                alert("ОШИБКА! см. консоль");
             }
         }
 
