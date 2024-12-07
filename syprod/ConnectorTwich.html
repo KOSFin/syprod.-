@@ -275,6 +275,37 @@
                 gap: 10px;
             }
         }
+
+        /* Ограничиваем ширину таблицы */
+        #chat {
+            overflow-x: auto; /* Добавляем прокрутку, если таблица слишком широкая */
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* Фиксированная ширина столбцов */
+        }
+        
+        th, td {
+            padding: 10px;
+            border: 1px solid #333;
+            text-align: left;
+            white-space: nowrap; /* Запрещаем перенос текста */
+            overflow: hidden; /* Скрываем переполнение */
+            text-overflow: ellipsis; /* Добавляем троеточие для переполненного текста */
+        }
+        
+        /* Ограничение ширины для конкретных столбцов */
+        td:nth-child(1), /* Столбец с ником */
+        th:nth-child(1) {
+            max-width: 150px; /* Задаём максимальную ширину */
+        }
+        
+        td:nth-child(2), /* Столбец с сообщением */
+        th:nth-child(2) {
+            max-width: 300px; /* Задаём максимальную ширину */
+        }
     </style>
 </head>
 <body>
