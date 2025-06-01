@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Route Planner - Презентация</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="presentation-container">
+        <!-- Navigation -->
+        <div class="navigation">
+            <div class="nav-progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+                <span class="slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">12</span></span>
+                <button class="nav-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Slide 1: Title -->
+        <div class="slide active" data-slide="1">
+            <div class="slide-content title-slide">
+                <div class="title-content">
+                    <div class="logo-section">
+                        <div class="ai-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h1 class="main-title">AI Route Planner</h1>
+                        <h2 class="subtitle">Интеллектуальный планировщик маршрутов</h2>
+                    </div>
+                    <p class="tagline">Революционное приложение для планирования путешествий на базе ИИ</p>
+                    <div class="tech-icons">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <i class="fas fa-robot"></i>
+                        <i class="fas fa-route"></i>
+                        <i class="fas fa-globe"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Problem -->
+        <div class="slide" data-slide="2">
+            <div class="slide-content">
+                <h1 class="slide-title">Проблемы современного планирования путешествий</h1>
+                <div class="problems-grid">
+                    <div class="problem-card">
+                        <i class="fas fa-clock"></i>
+                        <h3>Сложность планирования</h3>
+                        <p>Часы поиска информации о маршрутах и достопримечательностях</p>
+                    </div>
+                    <div class="problem-card">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Отсутствие персонализации</h3>
+                        <p>Стандартные решения без учета индивидуальных предпочтений</p>
+                    </div>
+                    <div class="problem-card">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <h3>Разрозненность информации</h3>
+                        <p>Данные разбросаны по множеству источников и сервисов</p>
+                    </div>
+                    <div class="problem-card">
+                        <i class="fas fa-history"></i>
+                        <h3>Недостаток контекста</h3>
+                        <p>Отсутствие исторической и культурной информации о местах</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Solution -->
+        <div class="slide" data-slide="3">
+            <div class="slide-content">
+                <h1 class="slide-title">AI-powered решение нового поколения</h1>
+                <div class="solution-container">
+                    <div class="solution-left">
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <i class="fas fa-brain"></i>
+                                <div>
+                                    <h3>Интеллектуальный поиск</h3>
+                                    <p>Понимание естественного языка для поиска любых мест и маршрутов</p>
+                                </div>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-toggle-on"></i>
+                                <div>
+                                    <h3>Два режима работы</h3>
+                                    <p>Режим Исследователя и Планировщика дня для разных сценариев</p>
+                                </div>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-user-cog"></i>
+                                <div>
+                                    <h3>Персонализация</h3>
+                                    <p>Учет времени, предпочтений и создание оптимальных маршрутов</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="solution-right">
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748651263/pplx_project_search_images/7beb7b4b9d7a563d1e4641fbe7bafc927fbea591.jpg" alt="AI Travel Assistant App Interface" class="solution-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Market -->
+        <div class="slide" data-slide="4">
+            <div class="slide-content">
+                <h1 class="slide-title">Рынок и возможности</h1>
+                <div class="market-container">
+                    <div class="market-stats">
+                        <div class="stat-card">
+                            <h2>$2.95B</h2>
+                            <p>Текущий размер рынка AI в туризме</p>
+                        </div>
+                        <div class="stat-card highlight">
+                            <h2>$18.5B</h2>
+                            <p>Прогноз на 2030 год</p>
+                        </div>
+                        <div class="stat-card">
+                            <h2>34%</h2>
+                            <p>Уже используют AI для планирования путешествий</p>
+                        </div>
+                    </div>
+                    <div class="market-chart">
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748724275/pplx_code_interpreter/c786309b_aug1g9.jpg" alt="AI Travel Market Growth Chart" class="chart-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Key Features -->
+        <div class="slide" data-slide="5">
+            <div class="slide-content">
+                <h1 class="slide-title">Ключевые возможности</h1>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-comments"></i>
+                        <h3>Естественный язык</h3>
+                        <p>Поиск на русском языке с пониманием контекста</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-map-marked"></i>
+                        <h3>Два режима работы</h3>
+                        <p>Исследователь и Планировщик дня</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-book-open"></i>
+                        <h3>Историческая информация</h3>
+                        <p>Подробные описания мест и достопримечательностей</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-clock"></i>
+                        <h3>Временное планирование</h3>
+                        <p>Оптимизация времени посещения и маршрутов</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-timeline"></i>
+                        <h3>Интерактивная шкала</h3>
+                        <p>Визуализация плана дня по времени</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-share-alt"></i>
+                        <h3>Экспорт и шаринг</h3>
+                        <p>Сохранение и отправка планов путешествий</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Technology Stack -->
+        <div class="slide" data-slide="6">
+            <div class="slide-content">
+                <h1 class="slide-title">Технологический стек</h1>
+                <div class="tech-stack">
+                    <div class="tech-category">
+                        <h3>AI & Machine Learning</h3>
+                        <div class="tech-items">
+                            <div class="tech-item">
+                                <i class="fas fa-brain"></i>
+                                <span>Google Gemini API</span>
+                            </div>
+                            <div class="tech-item">
+                                <i class="fas fa-code"></i>
+                                <span>Function Calling</span>
+                            </div>
+                            <div class="tech-item">
+                                <i class="fas fa-stream"></i>
+                                <span>Streaming API</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tech-category">
+                        <h3>Карты и Геолокация</h3>
+                        <div class="tech-items">
+                            <div class="tech-item">
+                                <i class="fas fa-map"></i>
+                                <span>Яндекс Карты API</span>
+                            </div>
+                            <div class="tech-item">
+                                <i class="fas fa-location-dot"></i>
+                                <span>Геокодинг</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tech-category">
+                        <h3>Frontend</h3>
+                        <div class="tech-items">
+                            <div class="tech-item">
+                                <i class="fab fa-js"></i>
+                                <span>Modern JavaScript</span>
+                            </div>
+                            <div class="tech-item">
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>Responsive Design</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: User Experience -->
+        <div class="slide" data-slide="7">
+            <div class="slide-content">
+                <h1 class="slide-title">Пользовательский опыт</h1>
+                <div class="ux-showcase">
+                    <div class="ux-left">
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748720560/pplx_project_search_images/8391fa42949899abda143138dd4352b3e80791b4.jpg" alt="AI Travel Planner UI" class="ux-image">
+                    </div>
+                    <div class="ux-right">
+                        <div class="ux-features">
+                            <div class="ux-feature">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <h3>Интерактивные карты</h3>
+                                <p>Плавная навигация с автоматическим масштабированием</p>
+                            </div>
+                            <div class="ux-feature">
+                                <i class="fas fa-th-large"></i>
+                                <h3>Карточки мест</h3>
+                                <p>Подробная информация с синхронизацией карты</p>
+                            </div>
+                            <div class="ux-feature">
+                                <i class="fas fa-clock"></i>
+                                <h3>Временная шкала</h3>
+                                <p>Визуализация плана дня по времени и активностям</p>
+                            </div>
+                            <div class="ux-feature">
+                                <i class="fas fa-mobile-alt"></i>
+                                <h3>Адаптивный дизайн</h3>
+                                <p>Оптимизация для всех устройств</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Competitive Advantages -->
+        <div class="slide" data-slide="8">
+            <div class="slide-content">
+                <h1 class="slide-title">Конкурентные преимущества</h1>
+                <div class="comparison-table">
+                    <div class="comparison-header">
+                        <div class="competitor">Конкурент</div>
+                        <div class="feature">Возможности</div>
+                        <div class="our-advantage">Наше преимущество</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="competitor">Google Maps</div>
+                        <div class="feature">Базовые AI функции</div>
+                        <div class="our-advantage">Глубокая историческая информация + временное планирование</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="competitor">TripAdvisor</div>
+                        <div class="feature">AI Trip Builder</div>
+                        <div class="our-advantage">Dual-mode интерфейс + оптимизация времени</div>
+                    </div>
+                    <div class="comparison-row">
+                        <div class="competitor">Airbnb</div>
+                        <div class="feature">AI рекомендации</div>
+                        <div class="our-advantage">Российская локализация + интеграция транспорта</div>
+                    </div>
+                </div>
+                <div class="unique-features">
+                    <h3>Уникальные возможности:</h3>
+                    <div class="unique-list">
+                        <span class="unique-item">Историческое описание мест</span>
+                        <span class="unique-item">Временная оптимизация</span>
+                        <span class="unique-item">Режим исследователя</span>
+                        <span class="unique-item">Российская локализация</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: MVP -->
+        <div class="slide" data-slide="9">
+            <div class="slide-content">
+                <h1 class="slide-title">MVP и функциональность</h1>
+                <div class="mvp-container">
+                    <div class="mvp-status">
+                        <h2>Текущий статус MVP</h2>
+                        <div class="status-grid">
+                            <div class="status-item completed">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Google Gemini интеграция</span>
+                            </div>
+                            <div class="status-item completed">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Яндекс Карты API</span>
+                            </div>
+                            <div class="status-item completed">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Двухрежимный интерфейс</span>
+                            </div>
+                            <div class="status-item completed">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Временная шкала</span>
+                            </div>
+                            <div class="status-item in-progress">
+                                <i class="fas fa-clock"></i>
+                                <span>Экспорт планов</span>
+                            </div>
+                            <div class="status-item in-progress">
+                                <i class="fas fa-clock"></i>
+                                <span>Мобильная версия</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <h3>Демо возможности</h3>
+                        <img src="https://pplx-res.cloudinary.com/image/upload/v1748651264/pplx_project_search_images/7855fb76bb3a627217113bbf117653de35daf7f3.jpg" alt="App Demo" class="demo-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Business Model -->
+        <div class="slide" data-slide="10">
+            <div class="slide-content">
+                <h1 class="slide-title">Бизнес-модель</h1>
+                <div class="business-model">
+                    <div class="revenue-streams">
+                        <h2>Источники дохода</h2>
+                        <div class="revenue-grid">
+                            <div class="revenue-item">
+                                <i class="fas fa-crown"></i>
+                                <h3>Премиум подписка</h3>
+                                <p>Расширенные возможности планирования и экспорта</p>
+                                <span class="price">₽299/мес</span>
+                            </div>
+                            <div class="revenue-item">
+                                <i class="fas fa-handshake"></i>
+                                <h3>Партнерства</h3>
+                                <p>Комиссии от туроператоров и отелей</p>
+                                <span class="price">5-15%</span>
+                            </div>
+                            <div class="revenue-item">
+                                <i class="fas fa-building"></i>
+                                <h3>B2B решения</h3>
+                                <p>Лицензирование для туристических агентств</p>
+                                <span class="price">от ₽50,000/мес</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="target-audience">
+                        <h2>Целевая аудитория</h2>
+                        <div class="audience-segments">
+                            <div class="segment">
+                                <i class="fas fa-laptop"></i>
+                                <span>Tech-savvy путешественники</span>
+                            </div>
+                            <div class="segment">
+                                <i class="fas fa-users"></i>
+                                <span>Семейные пары 25-45 лет</span>
+                            </div>
+                            <div class="segment">
+                                <i class="fas fa-briefcase"></i>
+                                <span>Бизнес-путешественники</span>
+                            </div>
+                            <div class="segment">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span>Студенты и молодежь</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Roadmap -->
+        <div class="slide" data-slide="11">
+            <div class="slide-content">
+                <h1 class="slide-title">Roadmap развития</h1>
+                <div class="roadmap">
+                    <div class="roadmap-phase">
+                        <div class="phase-header">
+                            <i class="fas fa-rocket"></i>
+                            <h2>Q3-Q4 2025</h2>
+                            <span class="phase-label">MVP Launch</span>
+                        </div>
+                        <ul class="phase-goals">
+                            <li>Запуск базовой версии</li>
+                            <li>Интеграция основных API</li>
+                            <li>Тестирование с 100 пользователями</li>
+                            <li>Сбор обратной связи</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="phase-header">
+                            <i class="fas fa-chart-line"></i>
+                            <h2>Q1-Q2 2026</h2>
+                            <span class="phase-label">Growth</span>
+                        </div>
+                        <ul class="phase-goals">
+                            <li>Мобильные приложения iOS/Android</li>
+                            <li>Расширение географии (СНГ)</li>
+                            <li>Партнерства с туроператорами</li>
+                            <li>Монетизация через подписки</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="phase-header">
+                            <i class="fas fa-globe"></i>
+                            <h2>2026-2027</h2>
+                            <span class="phase-label">Scale</span>
+                        </div>
+                        <ul class="phase-goals">
+                            <li>Международная экспансия</li>
+                            <li>AI-powered персонализация</li>
+                            <li>AR/VR интеграция</li>
+                            <li>B2B продукты</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Conclusion -->
+        <div class="slide" data-slide="12">
+            <div class="slide-content conclusion-slide">
+                <div class="conclusion-content">
+                    <h1 class="slide-title">Революция в планировании путешествий</h1>
+                    <div class="key-achievements">
+                        <div class="achievement">
+                            <i class="fas fa-star"></i>
+                            <h3>Инновационная технология</h3>
+                            <p>Первый AI планировщик с историческим контекстом</p>
+                        </div>
+                        <div class="achievement">
+                            <i class="fas fa-users"></i>
+                            <h3>Огромный рынок</h3>
+                            <p>$18.5B к 2030 году, 34% уже используют AI</p>
+                        </div>
+                        <div class="achievement">
+                            <i class="fas fa-rocket"></i>
+                            <h3>Готовый MVP</h3>
+                            <p>Работающий прототип с уникальными функциями</p>
+                        </div>
+                    </div>
+                    <div class="cta-section">
+                        <h2>Присоединяйтесь к будущему путешествий</h2>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <i class="fas fa-envelope"></i>
+                                <span>contact@ai-route-planner.ru</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fab fa-telegram"></i>
+                                <span>@ai_route_planner</span>
+                            </div>
+                            <div class="contact-item">
+                                <i class="fab fa-github"></i>
+                                <span>github.com/ai-route-planner</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide dots navigation -->
+        <div class="slide-dots">
+            <span class="dot active" data-slide="1"></span>
+            <span class="dot" data-slide="2"></span>
+            <span class="dot" data-slide="3"></span>
+            <span class="dot" data-slide="4"></span>
+            <span class="dot" data-slide="5"></span>
+            <span class="dot" data-slide="6"></span>
+            <span class="dot" data-slide="7"></span>
+            <span class="dot" data-slide="8"></span>
+            <span class="dot" data-slide="9"></span>
+            <span class="dot" data-slide="10"></span>
+            <span class="dot" data-slide="11"></span>
+            <span class="dot" data-slide="12"></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
