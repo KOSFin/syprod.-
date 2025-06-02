@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2cWhat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #f1f1f1;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+    
+        h1, h2 {
+            color: #ffffff;
+            margin: 0;
+        }
+    
+        a, button, input, select {
+            font-family: inherit;
+            border: none;
+            outline: none;
+        }
+    
+        a {
+            color: #1db954;
+            text-decoration: none;
+        }
+    
+        a:hover {
+            text-decoration: underline;
+        }
+    
+        button {
+            cursor: pointer;
+            background-color: #1db954;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+    
+        button:hover {
+            background-color: #14833b;
+        }
+    
+        /* Логотип и заголовок */
+        #header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+    
+        #header img {
+            width: 60px;
+            height: auto;
+        }
+    
+        /* Блок настроек */
+        #settings {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+    
+        #settings h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+    
+        #settings label {
+            display: block;
+            margin: 10px 0 5px;
+            font-size: 0.9rem;
+        }
+    
+        #settings select, #settings input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #2a2a2a;
+            color: #f1f1f1;
+            border-radius: 8px;
+        }
+    
+        #settings input[type="checkbox"], #settings input[type="radio"] {
+            margin-right: 8px;
+        }
+    
+        /* Таймер и информация */
+        #info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+    
+        .timer {
+            font-size: 1.2rem;
+            color: #1db954;
+        }
+    
+        /* Чат */
+        #chat {
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+    
+        #chat input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #2a2a2a;
+            color: #f1f1f1;
+            border-radius: 8px;
+        }
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+    
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+    
+        th {
+            background: #1db954;
+            color: white;
+        }
+    
+        tr:hover {
+            background-color: #303030;
+        }
+    
+        /* Модальное окно */
+        #userModal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+    
+        .modal-content {
+            background: #f1f1f1;
+            color: #121212;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+        }
+    
+        .modal-content img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+    
+        .modal-content h3 {
+            margin: 0 0 10px;
+        }
+
+        #user-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1db954, #121212);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        #user-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        #user-info img {
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            border: 3px solid #1e1e1e;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        #user-info img:hover {
+            transform: scale(1.1);
+        }
+        
+        #user-info span {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f1f1f1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            flex: 1;
+            margin-left: 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        #logout {
+            background: #ff4757;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+            width: 50px;
+        }
+        
+        #logout:hover {
+            background: #e63946;
+            transform: scale(1.1);
+        }
+        
+        #logout:active {
+            background: #c9283e;
+            transform: scale(0.9);
+        }
+    
+        /* Для мобильных устройств */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+    
+            #settings, #chat, #user-info {
+                padding: 15px;
+            }
+    
+            button {
+                width: 100%;
+                margin: 5px;
+            }
+    
+            #info {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        /* Ограничиваем ширину таблицы */
+        #chat {
+            overflow-x: auto; /* Добавляем прокрутку, если таблица слишком широкая */
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* Фиксированная ширина столбцов */
+        }
+        
+        th, td {
+            padding: 10px;
+            border: 1px solid #333;
+            text-align: left;
+            white-space: nowrap; /* Запрещаем перенос текста */
+            overflow: hidden; /* Скрываем переполнение */
+            text-overflow: ellipsis; /* Добавляем троеточие для переполненного текста */
+        }
+        
+        /* Ограничение ширины для конкретных столбцов */
+        td:nth-child(1), /* Столбец с ником */
+        th:nth-child(1) {
+            max-width: 150px; /* Задаём максимальную ширину */
+        }
+        
+        td:nth-child(2), /* Столбец с сообщением */
+        th:nth-child(2) {
+            max-width: 300px; /* Задаём максимальную ширину */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <img src="2cwhat.webp" alt="lg" width="50">
+            <h1>2CwHAT</h1>
+        </div>
+    
+        <div id="no-token" style="display: none;">
+            <p>Welcome to 2CwHAT. Connect your Twitch account to start counting messages!</p>
+            <button id="integrate-twitch">
+                <img src="https://m.media-amazon.com/images/I/21kRx-CJsUL._AC_UL800_QL65_.png" alt="Twitch Logo" width="30" style="vertical-align: middle;"> Integrate with Twitch
+            </button>
+        </div>
+    
+        <div id="user-info" style="display: none;">
+            <img id="user-avatar" src="" alt="UsAv" width="50">
+            <span id="user-name"></span>
+            <button id="logout" title="Logout">🚪</button>
+        </div>
+
+        <div id="settings">
+            <h2>Settings</h2>
+            <label for="activity">Count activity:</label>
+            <select id="activity">
+                <option value="all_messages">All Messages</option>
+                <option value="custom_keyword">Custom Keyword</option>
+                <option value="subscriptions">Subscriptions</option>
+            </select>
+            <div id="keyword-input" style="display: none;">
+                <label for="customKeyword">Custom Keyword:</label>
+                <input type="text" id="customKeyword" placeholder="Enter keyword or phrase">
+                <label>
+                    <input type="radio" name="keywordMatchType" value="exact" checked>
+                    Exact Match
+                </label>
+                <label>
+                    <input type="radio" name="keywordMatchType" value="contains">
+                    Contains
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="mergeMessages">
+                    Merge messages from the same user
+                </label>
+            </div>
+            <button id="start">Start</button>
+            <button id="stop" disabled>Stop</button>
+            <button id="exportData">Скачать данные JSON</button>
+        </div>
+
+        <div id="info">
+            <div class="timer">Timer: <span id="timer">0:00</span></div>
+            <div>Entries: <span id="entriesCount">0</span></div>
+        </div>
+
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modalUserInfo">
+                    <img id="modalUserAvatar" src="" alt="User Avatar">
+                    <h3 id="modalUsername"></h3>
+                    <p id="modalTwitchInfo"></p>
+                    <div id="modalUserMessages"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat">
+            <input type="text" id="search" placeholder="Search..." oninput="filterChat()">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Message</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="chatTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const activitySelect = document.getElementById('activity');
+        const timerElement = document.getElementById('timer');
+        const entriesCountElement = document.getElementById('entriesCount');
+        const chatTable = document.getElementById('chatTable');
+        const customKeywordInput = document.getElementById('customKeyword');
+        const keywordInputDiv = document.getElementById('keyword-input');
+        const userInfoDiv = document.getElementById('user-info');
+        const settingsDiv = document.getElementById('settings');
+        const chatDiv = document.getElementById('chat');
+        const userNameSpan = document.getElementById('user-name');
+        const userAvatarImg = document.getElementById('user-avatar');
+        const searchInput = document.getElementById('search');
+        const noTokenDiv = document.getElementById('no-token');
+        const integrateButton = document.getElementById('integrate-twitch');
+        const logoutButton = document.getElementById('logout');
+
+        let username = '';
+        let timer = 0;
+        let timerInterval;
+        let entriesCount = 0;
+        let counting = false;
+        let messagesSet = new Set();
+        let chatData = [];
+        let socket;
+
+        const clientId = 'pxie3yypaf51ctb0gmvz7m76fq4z0c'; // Your Twitch client ID
+        const redirectUri = 'https://syprod.ru/ConnectorTwich.html';
+
+        // Проверяем токен в localStorage
+        let accessToken = localStorage.getItem('twitchToken');
+        if (!accessToken) {
+            handleAuthorization();
+        }
+
+        logoutButton.addEventListener('click', () => {
+            logout();
+        });
+
+        function logout() {
+            localStorage.removeItem('twitchToken');
+            alert('Вы вышли из аккаунта.');
+            showNoTokenScreen();
+        }
+
+        function handleAuthorization() {
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                const params = new URLSearchParams(hash.substring(1));
+                accessToken = params.get('access_token');
+                if (accessToken) {
+                    localStorage.setItem('twitchToken', accessToken);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    initializeUser(accessToken);
+                } else {
+                    alert('Ошибка авторизации. Попробуйте снова.');
+                    showNoTokenScreen();
+                }
+            } else {
+                showNoTokenScreen();
+            }
+        }
+
+        activitySelect.addEventListener('change', () => {
+            keywordInputDiv.style.display = activitySelect.value === 'custom_keyword' ? 'block' : 'none';
+        });
+
+        function showNoTokenScreen() {
+            noTokenDiv.style.display = 'block';
+            userInfoDiv.style.display = 'none';
+            settingsDiv.style.display = 'none';
+            chatDiv.style.display = 'none';
+        }
+
+        integrateButton.addEventListener('click', () => {
+            window.location.href = `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=chat:read`;
+        });
+
+        startButton.addEventListener('click', () => {
+            if (!counting) {
+                counting = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                timer = 0;
+                entriesCount = 0;
+                messagesSet.clear();
+                chatTable.innerHTML = '';
+                updateTimer();
+                timerInterval = setInterval(updateTimer, 1000);
+                connectToChat();
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            counting = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            clearInterval(timerInterval);
+            alert(`Counting stopped. Total entries: ${entriesCount}`);
+        });
+
+        function updateTimer() {
+            timer++;
+            const minutes = Math.floor(timer / 60);
+            const seconds = timer % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        async function connectToChat() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                console.log("WebSocket is already connected");
+                return;
+            }
+            
+            try {
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Client-Id': clientId
+                };
+
+                const response = await axios.get('https://api.twitch.tv/helix/users', { headers });
+                const user = response.data.data[0];
+                username = user.login;
+                userAvatarImg.src = user.profile_image_url;
+                userNameSpan.textContent = username;
+                userInfoDiv.style.display = 'flex';
+
+                socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+                socket.onopen = () => {
+                    socket.send('CAP REQ :twitch.tv/tags');
+                    socket.send(`PASS oauth:${accessToken}`);
+                    socket.send(`NICK ${username}`);
+                    socket.send(`JOIN #${username}`);
+                };
+
+                socket.onmessage = (event) => {
+                    const data = event.data; // Это будет строка, если сервер отправляет текстовые данные
+                    const match = data.match(/^:(\w+)!.+ PRIVMSG #\w+ :(.+)/);
+                    
+                    // Если регулярное выражение не совпало, попытаемся улучшить его
+                    if (match) {
+                        const [, user, message] = match;
+                        const time = new Date().toLocaleTimeString();
+                
+                        if (isMessageValid(user, message)) {
+                            updateChatTable(user, message, time);
+                        }
+                    } else {
+                        // Если стандартное регулярное выражение не сработало, попробуем другое
+                        const extendedMatch = data.match(/:(\w+)!.* PRIVMSG #\w+ :(.+)/);
+                        if (extendedMatch) {
+                            const [, user, message] = extendedMatch;
+                            const time = new Date().toLocaleTimeString();
+                
+                            if (isMessageValid(user, message)) {
+                                updateChatTable(user, message, time);
+                            }
+                        }
+                    }
+                };
+            } catch (error) {
+                console.error(error);
+                alert("ОШИБКА! см. консоль");
+            }
+        }
+
+        function isMessageValid(user, message) {
+            if (activitySelect.value === 'all_messages') {
+                return true;
+            }
+        
+            if (activitySelect.value === 'custom_keyword') {
+                const keyword = customKeywordInput.value.trim();
+                if (!keyword) return false;
+        
+                const matchType = document.querySelector('input[name="keywordMatchType"]:checked').value;
+                if (matchType === 'exact' && message === keyword) {
+                    return true;
+                }
+                if (matchType === 'contains' && message.includes(keyword)) {
+                    return true;
+                }
+            }
+        
+            return false;
+        }
+
+        // Enhanced updateChatTable function
+        function updateChatTable(user, message, time) {
+            const mergeMessages = document.getElementById('mergeMessages').checked;
+            let messageText = message;
+
+            if (mergeMessages) {
+                const existingRow = Array.from(chatTable.rows).find(row => row.querySelector('.username')?.textContent === user);
+                if (existingRow) {
+                    const messageCell = existingRow.cells[1];
+                    const currentMessages = messageCell.textContent;
+                    
+                    // Limit merged messages with ellipsis
+                    const combinedMessages = currentMessages + ' | ' + message;
+                    messageCell.textContent = combinedMessages.length > 100 
+                        ? combinedMessages.substring(0, 97) + '...' 
+                        : combinedMessages;
+                    
+                    return;
+                }
+            }
+
+            entriesCount++;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="username" data-user="${user}">${user}</td>
+                <td>${messageText}</td>
+                <td>${time}</td>
+            `;
+            
+            // Add click event for user details
+            row.addEventListener('click', () => showUserModal(user));
+            
+            chatTable.appendChild(row);
+            entriesCountElement.textContent = entriesCount;
+        }
+
+        // User Modal Functions
+        function showUserModal(username) {
+            const modalUsername = document.getElementById('modalUsername');
+            const modalUserAvatar = document.getElementById('modalUserAvatar');
+            const modalTwitchInfo = document.getElementById('modalTwitchInfo');
+            const modalUserMessages = document.getElementById('modalUserMessages');
+            const userModal = document.getElementById('userModal');
+
+            // Fetch Twitch user info
+            fetchTwitchUserInfo(username).then(userInfo => {
+                modalUsername.textContent = username;
+                modalUserAvatar.src = userInfo.profile_image_url;
+                modalTwitchInfo.innerHTML = `
+                    Зарегистрирован: ${new Date(userInfo.created_at).toLocaleDateString()}<br>
+                    Тип канала: ${userInfo.broadcaster_type || 'Обычный пользователь'}
+                `;
+
+                // Collect user messages
+                const userMessages = getUserMessages(username);
+                modalUserMessages.innerHTML = `
+                    <h4>Сообщения пользователя:</h4>
+                    ${userMessages.slice(0, 5).map(msg => `<p>${msg}</p>`).join('')}
+                    ${userMessages.length > 5 ? '...' : ''}
+                `;
+
+                userModal.style.display = 'block';
+            });
+        }
+
+        // Sorting and Filtering Enhancements
+        function sortTable(column, type = 'string') {
+            const rows = Array.from(chatTable.rows);
+            const sortedRows = rows.sort((a, b) => {
+                const cellA = a.cells[column].textContent;
+                const cellB = b.cells[column].textContent;
+
+                if (type === 'number') {
+                    return parseFloat(cellA) - parseFloat(cellB);
+                }
+                return cellA.localeCompare(cellB);
+            });
+
+            chatTable.innerHTML = '';
+            sortedRows.forEach(row => chatTable.appendChild(row));
+        }
+
+        // Enhanced Search Function
+        function filterChat() {
+            const query = searchInput.value.toLowerCase();
+            const rows = chatTable.querySelectorAll('tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const cells = row.getElementsByTagName('td');
+                const username = cells[0].textContent.toLowerCase();
+                const message = cells[1].textContent.toLowerCase();
+                const time = cells[2].textContent.toLowerCase();
+
+                const isVisible = 
+                    username.includes(query) || 
+                    message.includes(query) || 
+                    time.includes(query);
+
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
+            });
+
+            entriesCountElement.textContent = `${visibleCount} / ${entriesCount}`;
+        }
+
+        // Utility function to get user messages
+        function getUserMessages(username) {
+            return Array.from(chatTable.rows)
+                .filter(row => row.querySelector('.username').textContent === username)
+                .map(row => row.cells[1].textContent);
+        }
+
+        // Async function to fetch Twitch user info
+        async function fetchTwitchUserInfo(username) {
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`,
+                'Client-Id': clientId
+            };
+
+            try {
+                const response = await axios.get(`https://api.twitch.tv/helix/users?login=${username}`, { headers });
+                return response.data.data[0];
+            } catch (error) {
+                console.error('Error fetching user info:', error);
+                return {};
+            }
+        }
+
+        // Close modal functionality
+        document.querySelector('.close').addEventListener('click', () => {
+            document.getElementById('userModal').style.display = 'none';
+        });
+
+        document.getElementById('exportData').addEventListener('click', () => {
+        const mergeEntries = document.getElementById('mergeMessages').checked; // Параметр объединения
+        const exportData = [];
+    
+        // Создание уникального списка участников
+        const userEntries = Array.from(chatTable.rows).reduce((acc, row) => {
+            const username = row.querySelector('.username').textContent;
+            const messages = row.cells[1].textContent.split('|').map(msg => msg.trim());
+            const amount = messages.length;
+    
+            if (mergeEntries) {
+                const existingUser = acc.find(entry => entry.name === username);
+                if (existingUser) {
+                    existingUser.amount += amount; // Увеличиваем вероятность
+                } else {
+                    acc.push({
+                        fastId: acc.length + 1,
+                        id: Math.random().toString(), // Генерация уникального ID
+                        extra: null,
+                        amount: amount,
+                        name: username,
+                        investors: []
+                    });
+                }
+            } else {
+                messages.forEach(() => {
+                    acc.push({
+                        fastId: acc.length + 1,
+                        id: Math.random().toString(), // Генерация уникального ID
+                        extra: null,
+                        amount: 1,
+                        name: username,
+                        investors: []
+                    });
+                });
+            }
+    
+            return acc;
+        }, []);
+    
+        exportData.push(...userEntries);
+    
+        // Генерация JSON и скачивание файла
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'wheel_of_fortune_data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+        // Optional: Add sorting buttons
+        const tableHeaders = document.querySelectorAll('#chat table th');
+        tableHeaders.forEach((header, index) => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', () => {
+                const sortType = index === 1 ? 'string' : index === 2 ? 'date' : 'string';
+                sortTable(index, sortType);
+            });
+        });
+    </script>
+</body>
+</html>
